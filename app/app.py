@@ -8,7 +8,7 @@ import os
 st.markdown("""
     <style>
     .stApp {
-        background-color: #f5f5f5;
+        background-color: #000080;
     }
     h1 {
         color: #4CAF50;
