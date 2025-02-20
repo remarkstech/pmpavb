@@ -4,6 +4,37 @@ import pandas as pd
 import numpy as np
 import os
 
+# Menambahkan CSS kustom
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f5f5f5;
+    }
+    h1 {
+        color: #4CAF50;
+        text-align: center;
+    }
+    .stNumberInput input {
+        border: 2px solid #4CAF50;
+        border-radius: 5px;
+        padding: 10px;
+        font-size: 14px;
+    }
+    .stButton button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: none;
+    }
+    .stButton button:hover {
+        background-color: #45a049;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Menambahkan path model
 model_path = os.path.join(os.path.dirname(__file__), "Model", "rf_model.joblib")
 model_path = os.path.abspath(model_path)  # Ubah jadi path absolut
 
@@ -41,7 +72,7 @@ if st.button("Calculate"):
         # Lakukan prediksi
         result = np.ceil(model.predict(input_data) * 1.2).astype(np.int64)
 
-        # Tampilkan hasil prediksi
+        # Tampilkan hasil prediksi dengan pemisah ribuan dan simbol IDR
         st.success(f"Cost Estimation: IDR {result[0]:,}")
     except Exception as e:
         st.error(f"Terjadi kesalahan: {e}")
