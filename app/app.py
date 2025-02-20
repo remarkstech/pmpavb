@@ -26,7 +26,7 @@ cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 cpm = st.number_input("CPM", min_value=0.0, format="%.0f")
 
 # Tombol prediksi
-if st.button("Prediksi"):
+if st.button("Calculate"):
     try:
         # Buat DataFrame dari input user
         input_data = pd.DataFrame([{ 
@@ -42,6 +42,6 @@ if st.button("Prediksi"):
         result = np.ceil(model.predict(input_data) * 1.2).astype(np.int64)
 
         # Tampilkan hasil prediksi
-        st.success(f"Hasil Prediksi: {result[0]}")
+        st.success(f"Cost Estimation: IDR {result[0]:,}")
     except Exception as e:
         st.error(f"Terjadi kesalahan: {e}")
