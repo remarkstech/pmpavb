@@ -46,7 +46,7 @@ if not os.path.exists(model_path):
 model = joblib.load(model_path)
 
 # Judul aplikasi
-st.title("CPL Prediction")
+st.title("Remarks Cost Estimation")
 
 # Input user
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
