@@ -54,19 +54,34 @@ clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
 leads = st.number_input("Leads", min_value=0.0, format="%.0f")
 cpl = st.number_input("CPL", min_value=0.0, format="%.0f")
 cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
-cpm = st.number_input("CPM", min_value=0.0, format="%.0f")
+
+# Dropdown untuk memilih industri
+industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+selected_industry = st.selectbox("Pilih Industri", industries)
+
+# Menentukan kolom industri yang dipilih
+industry_columns = [f"industry_{industry}" for industry in industries]
+
+# Menangani pemilihan industri dan set nilai kolom industri
+industry_dict = {industry: False for industry in industries}
+industry_dict[selected_industry] = True
 
 # Tombol prediksi
 if st.button("Calculate"):
     try:
         # Buat DataFrame dari input user
-        input_data = pd.DataFrame([{ 
-            "impressions": impressions, 
-            "clicks": clicks, 
-            "leads": leads, 
-            "cpl": cpl, 
-            "cpc": cpc, 
-            "cpm": cpm 
+        input_data = pd.DataFrame([{
+            "impressions": impressions,
+            "clicks": clicks,
+            "leads": leads,
+            "cpl": cpl,
+            "cpc": cpc,
+            "industry_AUTOMOTIVE": industry_dict["AUTOMOTIVE"],
+            "industry_BEAUTY": industry_dict["BEAUTY"],
+            "industry_EDUCATION": industry_dict["EDUCATION"],
+            "industry_FOOD MANUFACTURE": industry_dict["FOOD MANUFACTURE"],
+            "industry_LIFT DISTRIBUTOR": industry_dict["LIFT DISTRIBUTOR"],
+            "industry_PROPERTY": industry_dict["PROPERTY"]
         }])
 
         # Lakukan prediksi
