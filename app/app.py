@@ -85,7 +85,7 @@ if st.button("Calculate"):
         }])
 
         # Lakukan prediksi
-        result = np.ceil(model.predict(input_data) * 1.5).astype(np.int64)
+        result = np.ceil(model.predict(input_data) * 1).astype(np.int64)
 
         # Tampilkan hasil prediksi dengan pemisah ribuan dan simbol IDR
         st.success(f"Cost Estimation: IDR {result[0]:,}")
