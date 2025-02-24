@@ -9,17 +9,22 @@ import os
 # 1. Load Model & Scaler
 # ==========================
 # Path model & scaler
-model_path = os.path.join(os.path.dirname(__file__), "Model", "dl_model.h5")
-scaler_X_path = os.path.join(os.path.dirname(__file__), "Model", "scaler_X.joblib")
-scaler_y_path = os.path.join(os.path.dirname(__file__), "Model", "scaler_y.joblib")
+model_path = os.path.join(os.path.dirname(__file__), "dl_model.h5")
+scaler_X_path = os.path.join(os.path.dirname(__file__), "scaler.pkl")
+scaler_y_path = os.path.join(os.path.dirname(__file__), "scaler.pkl")  # Assuming both scalers are in the same file
 
-# Load model dan scaler
-model = tf.keras.models.load_model(model_path)
-scaler_X = joblib.load(scaler_X_path)
-scaler_y = joblib.load(scaler_y_path)
+# Load model and scaler
+try:
+    model = tf.keras.models.load_model(model_path)
+    scaler_X = joblib.load(scaler_X_path)
+    scaler_y = joblib.load(scaler_y_path)
+except FileNotFoundError as e:
+    st.error(f"File not found: {e}")
+except Exception as e:
+    st.error(f"Error loading model or scaler: {e}")
 
 # ==========================
-# 2. Tampilan Streamlit
+# 2. Streamlit Interface
 # ==========================
 st.title("Cost Estimation dengan Deep Learning")
 
@@ -35,7 +40,7 @@ industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DIS
 selected_industry = st.selectbox("Pilih Industri", industries)
 
 # ==========================
-# 3. Persiapan Data Input
+# 3. Prepare Input Data
 # ==========================
 # Set nilai one-hot encoding industri
 industry_dict = {industry: 0 for industry in industries}
@@ -58,7 +63,7 @@ input_data_log = np.log1p(input_data)
 input_scaled = scaler_X.transform(input_data_log)
 
 # ==========================
-# 4. Prediksi Model
+# 4. Model Prediction
 # ==========================
 if st.button("Calculate"):
     try:
