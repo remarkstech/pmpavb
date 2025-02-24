@@ -8,10 +8,10 @@ import os
 # ==========================
 # 1. Load Model & Scaler
 # ==========================
-# Path model & scaler
-model_path = os.path.join(os.path.dirname(__file__), "dl_model.h5")
-scaler_X_path = os.path.join(os.path.dirname(__file__), "scaler.pkl")
-scaler_y_path = os.path.join(os.path.dirname(__file__), "scaler.pkl")  # Assuming both scalers are in the same file
+# Path model & scaler (naik satu level dari /app)
+base_path = os.path.dirname(os.path.dirname(__file__))  # Ambil lokasi root /pmpavb
+model_path = os.path.join(base_path, "dl_model.h5")
+scaler_path = os.path.join(base_path, "scaler.pkl")
 
 # Load model and scaler
 try:
