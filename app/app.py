@@ -5,7 +5,7 @@ import tensorflow as tf
 import joblib
 import os
 import traceback
-import datetime  # Pastikan import datetime di awal
+import datetime
 
 # ==========================
 # 1. Load Model & Scaler (Dengan Caching)
@@ -49,62 +49,66 @@ leads = st.number_input("Leads", min_value=0.0, format="%.0f")
 cpl = st.number_input("CPL", min_value=0.0, format="%.0f")
 cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 
-# Dropdown untuk memilih industri
+# Dropdown untuk memilih industri, dengan placeholder yang tidak bisa dipilih
 industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-selected_industry = st.selectbox("Industry Select", industries, index=-1)
+selected_industry = st.selectbox("Industry Select", ["Select Industry"] + industries)  # Tambahkan "Select Industry" sebagai placeholder
 
 # ==========================
 # 3. Prepare Input Data
 # ==========================
-# One-hot encoding industri
-industry_dict = {industry: 0 for industry in industries}
-industry_dict[selected_industry] = 1
+# Cek apakah industri dipilih, jika belum beri peringatan
+if selected_industry == "Select Industry":
+    st.error("Please select a valid industry.")
+else:
+    # One-hot encoding industri
+    industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
+    industry_dict[selected_industry] = 1
 
-# Buat DataFrame dari input user
-input_data = pd.DataFrame([{
-    "impressions": impressions,
-    "clicks": clicks,
-    "leads": leads,
-    "cpl": cpl,
-    "cpc": cpc,
-    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
-}])
+    # Buat DataFrame dari input user
+    input_data = pd.DataFrame([{
+        "impressions": impressions,
+        "clicks": clicks,
+        "leads": leads,
+        "cpl": cpl,
+        "cpc": cpc,
+        **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+    }])
 
-# **Pastikan scaler sudah di-fit sebelum transformasi**
-if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
-    st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
-    st.stop()
+    # **Pastikan scaler sudah di-fit sebelum transformasi**
+    if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
+        st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
+        st.stop()
 
-# Log transformation input
-input_data_log = np.log1p(input_data)
+    # Log transformation input
+    input_data_log = np.log1p(input_data)
 
-# Scaling input
-try:
-    input_scaled = scaler_X.transform(input_data_log)
-except Exception as e:
-    st.error(f"Error saat scaling input: {e}")
-    st.stop()
-
-# ==========================
-# 4. Model Prediction
-# ==========================
-if st.button("Calculate"):
+    # Scaling input
     try:
-        with st.spinner("Predicting..."):
-            # Prediksi dengan model
-            pred_scaled = model.predict(input_scaled)
-
-            # Inverse transform hasil prediksi
-            pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
-            predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-            predicted_cost = predicted_cost * 1.15  # Tambahkan 15% pada hasil prediksi
-
-        # Tampilkan hasil prediksi
-        st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
-
+        input_scaled = scaler_X.transform(input_data_log)
     except Exception as e:
-        st.error("Terjadi kesalahan saat prediksi.")
-        st.text(traceback.format_exc())  # Menampilkan log lengkap error
+        st.error(f"Error saat scaling input: {e}")
+        st.stop()
+
+    # ==========================
+    # 4. Model Prediction
+    # ==========================
+    if st.button("Calculate"):
+        try:
+            with st.spinner("Predicting..."):
+                # Prediksi dengan model
+                pred_scaled = model.predict(input_scaled)
+
+                # Inverse transform hasil prediksi
+                pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
+                predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
+                predicted_cost = predicted_cost * 1.15  # Tambahkan 15% pada hasil prediksi
+
+            # Tampilkan hasil prediksi
+            st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+
+        except Exception as e:
+            st.error("Terjadi kesalahan saat prediksi.")
+            st.text(traceback.format_exc())  # Menampilkan log lengkap error
 
 # ==========================
 # Footer (Copyright & Remarks)
