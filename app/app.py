@@ -40,7 +40,7 @@ with st.spinner("Loading model & scalers..."):
 # ==========================
 # Tambahkan logo sebelum judul
 st.image("logo_final-02.png", width=100)  # Pastikan file ada di lokasi yang benar
-st.title("Media Budget Prediction")
+st.title("Media Plan Automation")
 
 # Input user
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
