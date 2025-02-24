@@ -1,4 +1,3 @@
---upgrade pip
 altair==5.5.0
 blinker==1.9.0
 click==8.1.8
@@ -15,7 +14,7 @@ scipy==1.15.2
 seaborn==0.13.2
 streamlit==1.42.1
 tenacity==9.0.0
-torch==2.2.2  # Kalau pakai PyTorch
-torchvision==0.17.2  # Kalau pakai PyTorch
-tensorflow==2.16.1  # Kalau pakai TensorFlow
+torch==2.2.2
+torchvision==0.17.2
+tensorflow==2.16.1
 uvicorn==0.34.0
