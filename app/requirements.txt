@@ -1,4 +1,4 @@
-tensorflow==2.14.0  # atau 2.15.0 kalau bisa
+tensorflow==2.16.1
 numpy==2.2.3
 pandas==2.2.3
 scikit-learn==1.6.1
