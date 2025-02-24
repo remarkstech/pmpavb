@@ -11,15 +11,12 @@ import os
 # Path model & scaler (naik satu level dari /app)
 base_path = os.path.dirname(os.path.dirname(__file__))  # Ambil lokasi root /pmpavb
 model_path = os.path.join(base_path, "dl_model.h5")
-scaler_path = os.path.join(base_path, "scaler.pkl")
+scaler_path = os.path.join(base_path, "scaler.pkl")  # Hanya satu scaler untuk X dan y
 
 # Load model and scaler
 try:
     model = tf.keras.models.load_model(model_path)
-    
-    # Load scaler (asumsi scaler.pkl menyimpan dictionary)
-    scaler = joblib.load(scaler_path)
-    scaler_X, scaler_y = scaler["X"], scaler["y"]
+    scaler = joblib.load(scaler_path)  # Load satu scaler saja
 
 except FileNotFoundError as e:
     st.error(f"File not found: {e}")
@@ -63,7 +60,7 @@ input_data = pd.DataFrame([{
 input_data_log = np.log1p(input_data)
 
 # Scaling input
-input_scaled = scaler_X.transform(input_data_log)
+input_scaled = scaler.transform(input_data_log)
 
 # ==========================
 # 4. Model Prediction
@@ -74,7 +71,7 @@ if st.button("Calculate"):
         pred_scaled = model.predict(input_scaled)
 
         # Inverse transform hasil prediksi
-        pred_log = scaler_y.inverse_transform(pred_scaled)
+        pred_log = scaler.inverse_transform(pred_scaled.reshape(-1, 1))  # Pastikan shape sesuai
         predicted_cost = np.expm1(pred_log)[0, 0]  # Ubah ke angka asli
 
         # Tampilkan hasil prediksi
