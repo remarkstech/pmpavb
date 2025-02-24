@@ -1,20 +1,32 @@
-altair==5.5.0
-blinker==1.9.0
-click==8.1.8
-fastapi==0.115.8
-Jinja2==3.1.5
-joblib==1.4.2
-matplotlib==3.10.0
-numpy==2.2.3
-pandas==2.2.3
-pydantic==2.10.6
-pydeck==0.9.1
-scikit-learn==1.6.1
-scipy==1.15.2
-seaborn==0.13.2
-streamlit==1.42.1
-tenacity==9.0.0
-torch==2.2.2
-torchvision==0.17.2
-tensorflow==2.16.1
-uvicorn==0.34.0
+# Core libraries
+numpy==1.26.0  # Sesuai dengan kebutuhan pandas dan tensorflow
+pandas==2.2.3  # Memerlukan numpy>=1.26.0
+scikit-learn==1.0.2  # Kompatibel dengan numpy 1.26.0
+scipy==1.15.2  # Kompatibel dengan numpy 1.26.0
+
+# Visualization libraries
+matplotlib==3.6.3  # Kompatibel dengan numpy 1.26.0
+seaborn==0.13.2  # Kompatibel dengan numpy 1.26.0
+
+# Deep learning libraries
+tensorflow==2.16.1  # Memerlukan numpy>=1.26.0
+torch==2.2.2  # Jika Anda membutuhkan PyTorch
+torchvision==0.17.2  # Jika Anda membutuhkan PyTorch
+
+# Data processing libraries
+joblib==1.4.2  # Untuk menyimpan dan load model/scaler
+pydeck==0.9.1  # Visualisasi berbasis web
+altair==5.5.0  # Visualisasi data
+
+# Web framework for deployment
+streamlit==1.42.1  # Web interface untuk aplikasi
+fastapi==0.115.8  # Framework untuk API (jika diperlukan)
+uvicorn==0.34.0  # Server untuk FastAPI
+
+# Others
+rich==13.9.4  # Untuk logging dan tampilan yang lebih baik
+markdown-it-py==3.0.0  # Untuk dukungan markdown di Streamlit
+pygments==2.19.1  # Untuk syntax highlighting di Streamlit
+mdurl==0.1.2  # Untuk markdown-it-py
+blinker==1.9.0  # Untuk komunikasi antar objek di Streamlit
+click==8.1.8  # Untuk antarmuka command line di beberapa paket
