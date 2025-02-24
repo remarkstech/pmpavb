@@ -5,6 +5,7 @@ import tensorflow as tf
 import joblib
 import os
 import traceback
+import datetime  # Pastikan import datetime di awal
 
 # ==========================
 # 1. Load Model & Scaler (Dengan Caching)
@@ -98,19 +99,15 @@ if st.button("Calculate"):
             predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
             predicted_cost = predicted_cost * 1.15  # Tambahkan 15% pada hasil prediksi
 
-
         # Tampilkan hasil prediksi
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
 
-
-import datetime
-
-# Ambil tahun saat ini
-current_year = datetime.datetime.now().year
-
-# Tambahkan footer
-st.markdown("---")  # Pembatas garis
-st.markdown(f"© {current_year} Remarks Asia. All Rights Reserved.")
+        # ==========================
+        # Footer (Copyright & Remarks)
+        # ==========================
+        current_year = datetime.datetime.now().year  # Ambil tahun saat ini
+        st.markdown("---")  # Pembatas garis
+        st.markdown(f"© {current_year} Remarks Asia. All Rights Reserved.")
 
     except Exception as e:
         st.error("Terjadi kesalahan saat prediksi.")
