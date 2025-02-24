@@ -37,7 +37,7 @@ with st.spinner("Loading model & scalers..."):
 # ==========================
 # 2. Streamlit Interface
 # ==========================
-st.title("Cost Estimation dengan Deep Learning")
+st.title("Remarks Cost Prediction")
 
 # Input user
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
