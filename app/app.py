@@ -4,27 +4,35 @@ import pandas as pd
 import tensorflow as tf
 import joblib
 import os
+import traceback
 
 # ==========================
-# 1. Load Model & Scaler
+# 1. Load Model & Scaler (Dengan Caching)
 # ==========================
-# Path model & scaler (naik satu level dari /app)
-base_path = os.path.dirname(os.path.dirname(__file__))  # Ambil lokasi root /pmpavb
-model_path = os.path.join(base_path, "dl_model.h5")
-scaler_X_path = os.path.join(base_path, "scaler_X.pkl")  # Scaler untuk input (X)
-scaler_y_path = os.path.join(base_path, "scaler_y.pkl")  # Scaler untuk output (y)
+@st.cache_resource
+def load_model():
+    """Load model hanya sekali untuk mencegah reload berulang."""
+    model_path = os.path.abspath("dl_model.h5")  # Pastikan path absolut
+    return tf.keras.models.load_model(model_path)
 
-# Load model and scalers
-try:
-    model = tf.keras.models.load_model(model_path)
-    scaler_X = joblib.load(scaler_X_path)  # Scaler untuk fitur input
-    scaler_y = joblib.load(scaler_y_path)  # Scaler untuk target/output
-except FileNotFoundError as e:
-    st.error(f"File not found: {e}")
-    st.stop()
-except Exception as e:
-    st.error(f"Error loading model or scaler: {e}")
-    st.stop()
+@st.cache_resource
+def load_scalers():
+    """Load scaler_X dan scaler_y hanya sekali."""
+    scaler_X_path = os.path.abspath("scaler_X.pkl")
+    scaler_y_path = os.path.abspath("scaler_y.pkl")
+    
+    try:
+        scaler_X = joblib.load(scaler_X_path)
+        scaler_y = joblib.load(scaler_y_path)
+        return scaler_X, scaler_y
+    except Exception as e:
+        st.error(f"Error loading scaler: {e}")
+        st.stop()
+
+# Load model & scalers
+with st.spinner("Loading model & scalers..."):
+    model = load_model()
+    scaler_X, scaler_y = load_scalers()
 
 # ==========================
 # 2. Streamlit Interface
@@ -59,35 +67,36 @@ input_data = pd.DataFrame([{
     **{f"industry_{industry}": industry_dict[industry] for industry in industries}
 }])
 
-# Cek apakah scaler_X sudah di-fit
-if not hasattr(scaler_X, "mean_"):
-    st.error("Error: scaler_X belum di-fit dengan data fitur X.")
+# **Pastikan scaler sudah di-fit sebelum transformasi**
+if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
+    st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
     st.stop()
 
 # Log transformation input
 input_data_log = np.log1p(input_data)
 
 # Scaling input
-input_scaled = scaler_X.transform(input_data_log)
+try:
+    input_scaled = scaler_X.transform(input_data_log)
+except Exception as e:
+    st.error(f"Error saat scaling input: {e}")
+    st.stop()
 
 # ==========================
 # 4. Model Prediction
 # ==========================
 if st.button("Calculate"):
     try:
-        # Prediksi dengan model
-        pred_scaled = model.predict(input_scaled)
+        with st.spinner("Predicting..."):
+            # Prediksi dengan model
+            pred_scaled = model.predict(input_scaled)
 
-        # Cek apakah scaler_y sudah di-fit
-        if not hasattr(scaler_y, "mean_"):
-            st.error("Error: scaler_y belum di-fit dengan target y.")
-            st.stop()
-
-        # Inverse transform hasil prediksi
-        pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
-        predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
+            # Inverse transform hasil prediksi
+            pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
+            predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
 
         # Tampilkan hasil prediksi
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+
     except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+        st.error("Terjadi kesalahan saat predik
