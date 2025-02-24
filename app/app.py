@@ -51,7 +51,7 @@ cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 
 # Dropdown untuk memilih industri
 industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-selected_industry = st.selectbox("Pilih Industri", industries)
+selected_industry = st.selectbox("Industry Select", industries, index=-1)
 
 # ==========================
 # 3. Prepare Input Data
