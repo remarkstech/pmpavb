@@ -11,17 +11,20 @@ import os
 # Path model & scaler (naik satu level dari /app)
 base_path = os.path.dirname(os.path.dirname(__file__))  # Ambil lokasi root /pmpavb
 model_path = os.path.join(base_path, "dl_model.h5")
-scaler_path = os.path.join(base_path, "scaler.pkl")  # Hanya satu scaler untuk X dan y
+scaler_X_path = os.path.join(base_path, "scaler_X.pkl")  # Scaler untuk input (X)
+scaler_y_path = os.path.join(base_path, "scaler_y.pkl")  # Scaler untuk output (y)
 
-# Load model and scaler
+# Load model and scalers
 try:
     model = tf.keras.models.load_model(model_path)
-    scaler = joblib.load(scaler_path)  # Load satu scaler saja
-
+    scaler_X = joblib.load(scaler_X_path)  # Scaler untuk fitur input
+    scaler_y = joblib.load(scaler_y_path)  # Scaler untuk target/output
 except FileNotFoundError as e:
     st.error(f"File not found: {e}")
+    st.stop()
 except Exception as e:
     st.error(f"Error loading model or scaler: {e}")
+    st.stop()
 
 # ==========================
 # 2. Streamlit Interface
@@ -42,7 +45,7 @@ selected_industry = st.selectbox("Pilih Industri", industries)
 # ==========================
 # 3. Prepare Input Data
 # ==========================
-# Set nilai one-hot encoding industri
+# One-hot encoding industri
 industry_dict = {industry: 0 for industry in industries}
 industry_dict[selected_industry] = 1
 
@@ -56,11 +59,16 @@ input_data = pd.DataFrame([{
     **{f"industry_{industry}": industry_dict[industry] for industry in industries}
 }])
 
+# Cek apakah scaler_X sudah di-fit
+if not hasattr(scaler_X, "mean_"):
+    st.error("Error: scaler_X belum di-fit dengan data fitur X.")
+    st.stop()
+
 # Log transformation input
 input_data_log = np.log1p(input_data)
 
 # Scaling input
-input_scaled = scaler.transform(input_data_log)
+input_scaled = scaler_X.transform(input_data_log)
 
 # ==========================
 # 4. Model Prediction
@@ -70,9 +78,14 @@ if st.button("Calculate"):
         # Prediksi dengan model
         pred_scaled = model.predict(input_scaled)
 
+        # Cek apakah scaler_y sudah di-fit
+        if not hasattr(scaler_y, "mean_"):
+            st.error("Error: scaler_y belum di-fit dengan target y.")
+            st.stop()
+
         # Inverse transform hasil prediksi
-        pred_log = scaler.inverse_transform(pred_scaled.reshape(-1, 1))  # Pastikan shape sesuai
-        predicted_cost = np.expm1(pred_log)[0, 0]  # Ubah ke angka asli
+        pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
+        predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
 
         # Tampilkan hasil prediksi
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
