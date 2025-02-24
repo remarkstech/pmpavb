@@ -37,6 +37,8 @@ with st.spinner("Loading model & scalers..."):
 # ==========================
 # 2. Streamlit Interface
 # ==========================
+# Tambahkan logo sebelum judul
+st.image("logo_final-02.png", width=100)  # Pastikan file ada di lokasi yang benar
 st.title("Remarks Cost Prediction")
 
 # Input user
