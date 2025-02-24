@@ -39,7 +39,7 @@ with st.spinner("Loading model & scalers..."):
 # ==========================
 # Tambahkan logo sebelum judul
 st.image("logo_final-02.png", width=100)  # Pastikan file ada di lokasi yang benar
-st.title("Remarks Cost Prediction")
+st.title("Media Budget Prediction")
 
 # Input user
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
@@ -101,6 +101,16 @@ if st.button("Calculate"):
 
         # Tampilkan hasil prediksi
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+
+
+import datetime
+
+# Ambil tahun saat ini
+current_year = datetime.datetime.now().year
+
+# Tambahkan footer
+st.markdown("---")  # Pembatas garis
+st.markdown(f"© {current_year} Remarks Asia. All Rights Reserved.")
 
     except Exception as e:
         st.error("Terjadi kesalahan saat prediksi.")
