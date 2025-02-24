@@ -16,8 +16,11 @@ scaler_path = os.path.join(base_path, "scaler.pkl")
 # Load model and scaler
 try:
     model = tf.keras.models.load_model(model_path)
-    scaler_X = joblib.load(scaler_X_path)
-    scaler_y = joblib.load(scaler_y_path)
+    
+    # Load scaler (asumsi scaler.pkl menyimpan dictionary)
+    scaler = joblib.load(scaler_path)
+    scaler_X, scaler_y = scaler["X"], scaler["y"]
+
 except FileNotFoundError as e:
     st.error(f"File not found: {e}")
 except Exception as e:
