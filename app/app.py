@@ -99,4 +99,5 @@ if st.button("Calculate"):
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
 
     except Exception as e:
-        st.error("Terjadi kesalahan saat predik
+        st.error("Terjadi kesalahan saat prediksi.")
+        st.text(traceback.format_exc())  # Menampilkan log lengkap error
