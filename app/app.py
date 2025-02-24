@@ -1,52 +1,27 @@
 import streamlit as st
-import joblib
-import pandas as pd
 import numpy as np
+import pandas as pd
+import tensorflow as tf
+import joblib
 import os
 
-# Menambahkan CSS kustom
-st.markdown("""
-    <style>
-    .stApp {
-        background-color: #000080;
-    }
-    h1 {
-        color: #4CAF50;
-        text-align: center;
-    }
-    .stNumberInput input {
-        border: 2px solid #4CAF50;
-        border-radius: 5px;
-        padding: 10px;
-        font-size: 14px;
-    }
-    .stButton button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        font-size: 16px;
-        border-radius: 5px;
-        border: none;
-    }
-    .stButton button:hover {
-        background-color: #45a049;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# ==========================
+# 1. Load Model & Scaler
+# ==========================
+# Path model & scaler
+model_path = os.path.join(os.path.dirname(__file__), "Model", "dl_model.h5")
+scaler_X_path = os.path.join(os.path.dirname(__file__), "Model", "scaler_X.joblib")
+scaler_y_path = os.path.join(os.path.dirname(__file__), "Model", "scaler_y.joblib")
 
-# Menambahkan path model
-model_path = os.path.join(os.path.dirname(__file__), "Model", "rf_model.joblib")
-model_path = os.path.abspath(model_path)  # Ubah jadi path absolut
+# Load model dan scaler
+model = tf.keras.models.load_model(model_path)
+scaler_X = joblib.load(scaler_X_path)
+scaler_y = joblib.load(scaler_y_path)
 
-# Cek apakah file model benar-benar ada
-if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Model tidak ditemukan di: {model_path}")
-
-# Load model
-model = joblib.load(model_path)
-
-# Judul aplikasi
-st.title("Remarks Cost Estimation")
+# ==========================
+# 2. Tampilan Streamlit
+# ==========================
+st.title("Cost Estimation dengan Deep Learning")
 
 # Input user
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
@@ -59,35 +34,42 @@ cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
 selected_industry = st.selectbox("Pilih Industri", industries)
 
-# Menentukan kolom industri yang dipilih
-industry_columns = [f"industry_{industry}" for industry in industries]
+# ==========================
+# 3. Persiapan Data Input
+# ==========================
+# Set nilai one-hot encoding industri
+industry_dict = {industry: 0 for industry in industries}
+industry_dict[selected_industry] = 1
 
-# Menangani pemilihan industri dan set nilai kolom industri
-industry_dict = {industry: False for industry in industries}
-industry_dict[selected_industry] = True
+# Buat DataFrame dari input user
+input_data = pd.DataFrame([{
+    "impressions": impressions,
+    "clicks": clicks,
+    "leads": leads,
+    "cpl": cpl,
+    "cpc": cpc,
+    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+}])
 
-# Tombol prediksi
+# Log transformation input
+input_data_log = np.log1p(input_data)
+
+# Scaling input
+input_scaled = scaler_X.transform(input_data_log)
+
+# ==========================
+# 4. Prediksi Model
+# ==========================
 if st.button("Calculate"):
     try:
-        # Buat DataFrame dari input user
-        input_data = pd.DataFrame([{
-            "impressions": impressions,
-            "clicks": clicks,
-            "leads": leads,
-            "cpl": cpl,
-            "cpc": cpc,
-            "industry_AUTOMOTIVE": industry_dict["AUTOMOTIVE"],
-            "industry_BEAUTY": industry_dict["BEAUTY"],
-            "industry_EDUCATION": industry_dict["EDUCATION"],
-            "industry_FOOD MANUFACTURE": industry_dict["FOOD MANUFACTURE"],
-            "industry_LIFT DISTRIBUTOR": industry_dict["LIFT DISTRIBUTOR"],
-            "industry_PROPERTY": industry_dict["PROPERTY"]
-        }])
+        # Prediksi dengan model
+        pred_scaled = model.predict(input_scaled)
 
-        # Lakukan prediksi
-        result = np.ceil(model.predict(input_data) * 1).astype(np.int64)
+        # Inverse transform hasil prediksi
+        pred_log = scaler_y.inverse_transform(pred_scaled)
+        predicted_cost = np.expm1(pred_log)[0, 0]  # Ubah ke angka asli
 
-        # Tampilkan hasil prediksi dengan pemisah ribuan dan simbol IDR
-        st.success(f"Cost Estimation: IDR {result[0]:,}")
+        # Tampilkan hasil prediksi
+        st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
     except Exception as e:
         st.error(f"Terjadi kesalahan: {e}")
