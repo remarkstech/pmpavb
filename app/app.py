@@ -13,14 +13,14 @@ import datetime
 @st.cache_resource
 def load_model():
     """Load model hanya sekali untuk mencegah reload berulang."""
-    model_path = os.path.abspath("dl_model2.h5")  # Pastikan path absolut
+    model_path = os.path.abspath("dl_model3.h5")  # Pastikan path absolut
     return tf.keras.models.load_model(model_path)
 
 @st.cache_resource
 def load_scalers():
     """Load scaler_X dan scaler_y hanya sekali."""
-    scaler_X_path = os.path.abspath("scaler_X1.pkl")
-    scaler_y_path = os.path.abspath("scaler_y1.pkl")
+    scaler_X_path = os.path.abspath("scaler_X2.pkl")
+    scaler_y_path = os.path.abspath("scaler_y2.pkl")
     
     try:
         scaler_X = joblib.load(scaler_X_path)
