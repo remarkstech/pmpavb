@@ -56,7 +56,7 @@ selected_industry = st.selectbox("Industry Select (Leave as is if industry not l
 
 # Dropdown untuk memilih campaign type, dengan placeholder yang tidak bisa dipilih
 sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-selected_source = st.selectbox("Campaign Type (Leave as it is if no specified source.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
+selected_source = st.selectbox("Campaign Type (Leave as is if no specified source.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
 
 # ==========================
 # 3. Prepare Input Data
