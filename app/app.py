@@ -131,8 +131,8 @@ if st.button("Calculate"):
             lower_bound = predicted_cost * 0.93
             upper_bound = predicted_cost * 1.15
 
-# Menampilkan estimasi biaya dalam rentang
-st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
+            # Menampilkan estimasi biaya dalam rentang
+            st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
 
 
         # # Tampilkan hasil prediksi
