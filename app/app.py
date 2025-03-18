@@ -19,8 +19,8 @@ def load_model():
 @st.cache_resource
 def load_scalers():
     """Load scaler_X dan scaler_y hanya sekali."""
-    scaler_X_path = os.path.abspath("scaler_X2.pkl")
-    scaler_y_path = os.path.abspath("scaler_y2.pkl")
+    scaler_X_path = os.path.abspath("scaler_X1.pkl")
+    scaler_y_path = os.path.abspath("scaler_y1.pkl")
     
     try:
         scaler_X = joblib.load(scaler_X_path)
