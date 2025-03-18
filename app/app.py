@@ -13,7 +13,7 @@ import datetime
 @st.cache_resource
 def load_model():
     """Load model hanya sekali untuk mencegah reload berulang."""
-    model_path = os.path.abspath("dl_model.h5")  # Pastikan path absolut
+    model_path = os.path.abspath("dl_model2.h5")  # Pastikan path absolut
     return tf.keras.models.load_model(model_path)
 
 @st.cache_resource
@@ -53,6 +53,10 @@ cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
 selected_industry = st.selectbox("Industry Select", ["Select Industry"] + industries)  # Tambahkan "Select Industry" sebagai placeholder
 
+# Dropdown untuk memilih campaign type, dengan placeholder yang tidak bisa dipilih
+sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
+selected_source = st.selectbox("Campaign Type", ["Campaign Type", "Others"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
+
 # ==========================
 # 3. Prepare Input Data
 # ==========================
@@ -64,6 +68,13 @@ else:
     industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
     industry_dict[selected_industry] = 1
 
+# Cek apakah source dipilih
+if selected_source == "Campaign Type":
+    source_dict = {source: 0 for source in sources} 
+else:
+    source_dict = {source: 0 for source in sources}  # Default all sources to 0
+    source_dict[selected_source] = 1
+
     # Buat DataFrame dari input user
     input_data = pd.DataFrame([{
         "impressions": impressions,
@@ -71,8 +82,22 @@ else:
         "leads": leads,
         "cpl": cpl,
         "cpc": cpc,
+        **{f"source_{source}": source_dict[source] for source in sources},
         **{f"industry_{industry}": industry_dict[industry] for industry in industries}
     }])
+
+    # ==========================
+    # 4. Ensure Column Order (Matching Model Input Order)
+    # ==========================
+    expected_columns = [
+        "impressions", "clicks", "leads", "cpl", "cpc",
+        "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
+        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
+        "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
+    ]
+
+    # Urutkan kolom sesuai dengan urutan yang diharapkan
+    input_data = input_data[expected_columns]
 
     # **Pastikan scaler sudah di-fit sebelum transformasi**
     if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
@@ -90,7 +115,7 @@ else:
         st.stop()
 
     # ==========================
-    # 4. Model Prediction
+    # 5. Model Prediction
     # ==========================
     if st.button("Calculate"):
         try:
@@ -101,7 +126,7 @@ else:
                 # Inverse transform hasil prediksi
                 pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
                 predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-                predicted_cost = predicted_cost * 1.05  # Tambahkan 30% pada hasil prediksi
+                predicted_cost = predicted_cost * 1.05  # Tambahkan 5% pada hasil prediksi
 
             # Tampilkan hasil prediksi
             st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
