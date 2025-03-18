@@ -51,12 +51,12 @@ cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 
 # Dropdown untuk memilih industri, dengan placeholder yang tidak bisa dipilih
 industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-selected_industry = st.selectbox("Industry Select", ["Select Industry"] + industries, index=0)  # Tambahkan "Select Industry" sebagai placeholder
+selected_industry = st.selectbox("Industry Select", ["Select Industry (Leave as is if industry not listed.)"] + industries, index=0)  # Tambahkan "Select Industry" sebagai placeholder
 
 
 # Dropdown untuk memilih campaign type, dengan placeholder yang tidak bisa dipilih
 sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-selected_source = st.selectbox("Campaign Type (Leave as it is if no source selected.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
+selected_source = st.selectbox("Campaign Type (Leave as it is if no specified source.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
 
 # ==========================
 # 3. Prepare Input Data
