@@ -50,7 +50,7 @@ cpl = st.number_input("CPL", min_value=0.0, format="%.0f")
 cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
 
 # Dropdown untuk memilih industri, dengan placeholder yang tidak bisa dipilih
-industries = ["AUTOMOTIVE", "BEAUTY", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
 selected_industry = st.selectbox("Industry Select", ["Select Industry"] + industries, index=0)  # Tambahkan "Select Industry" sebagai placeholder
 
 
