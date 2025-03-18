@@ -56,15 +56,15 @@ selected_industry = st.selectbox("Industry Select", ["Select Industry"] + indust
 
 # Dropdown untuk memilih campaign type, dengan placeholder yang tidak bisa dipilih
 sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-selected_source = st.selectbox("Campaign Type", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
+selected_source = st.selectbox("Campaign Type (Leave as it is if no source selected.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
 
 # ==========================
 # 3. Prepare Input Data
 # ==========================
 # Cek apakah industri dipilih, jika belum beri peringatan
-if selected_industry == "Select Industry":
-    st.error("Please select a valid industry.")
-    st.stop()  # Berhenti jika industri tidak dipilih
+# if selected_industry == "Select Industry":
+#     st.error("Please select a valid industry.")
+#     st.stop()  # Berhenti jika industri tidak dipilih
 
 # One-hot encoding industri
 industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
