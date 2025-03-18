@@ -126,7 +126,7 @@ if st.button("Calculate"):
             # Inverse transform hasil prediksi
             pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
             predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-            predicted_cost = predicted_cost * 1.05  # Tambahkan 5% pada hasil prediksi
+            predicted_cost = predicted_cost * 1  # Tambahkan 5% pada hasil prediksi
 
         # Tampilkan hasil prediksi
         st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
