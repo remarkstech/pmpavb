@@ -126,10 +126,17 @@ if st.button("Calculate"):
             # Inverse transform hasil prediksi
             pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
             predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-            predicted_cost = predicted_cost * 1  # Tambahkan 5% pada hasil prediksi
+            predicted_cost = predicted_cost * 1  #hasil prediksi
+            # Menghitung rentang estimasi biaya
+            lower_bound = predicted_cost * 0.93
+            upper_bound = predicted_cost * 1.15
 
-        # Tampilkan hasil prediksi
-        st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+# Menampilkan estimasi biaya dalam rentang
+st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
+
+
+        # # Tampilkan hasil prediksi
+        # st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
 
     except Exception as e:
         st.error("Terjadi kesalahan saat prediksi.")
