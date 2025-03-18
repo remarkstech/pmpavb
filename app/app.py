@@ -64,77 +64,76 @@ selected_source = st.selectbox("Campaign Type", ["Campaign Type", "Others"] + so
 # Cek apakah industri dipilih, jika belum beri peringatan
 if selected_industry == "Select Industry":
     st.error("Please select a valid industry.")
-else:
-    # One-hot encoding industri
-    industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
-    industry_dict[selected_industry] = 1
+    st.stop()  # Berhenti jika industri tidak dipilih
 
-# Cek apakah source dipilih
-if selected_source == "Campaign Type":
-    source_dict = {source: 0 for source in sources} 
-else:
-    source_dict = {source: 0 for source in sources}  # Default all sources to 0
+# One-hot encoding industri
+industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
+industry_dict[selected_industry] = 1
+
+# Cek apakah source dipilih, jika tidak beri default 0
+source_dict = {source: 0 for source in sources}
+if selected_source != "Campaign Type":
     source_dict[selected_source] = 1
 
-    # Buat DataFrame dari input user
-    input_data = pd.DataFrame([{
-        "impressions": impressions,
-        "clicks": clicks,
-        "leads": leads,
-        "cpl": cpl,
-        "cpc": cpc,
-        **{f"source_{source}": source_dict[source] for source in sources},
-        **{f"industry_{industry}": industry_dict[industry] for industry in industries}
-    }])
+# Buat DataFrame dari input user
+input_data = pd.DataFrame([{
+    "impressions": impressions,
+    "clicks": clicks,
+    "leads": leads,
+    "cpl": cpl,
+    "cpc": cpc,
+    **{f"source_{source}": source_dict[source] for source in sources},
+    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+}])
 
-    # ==========================
-    # 4. Ensure Column Order (Matching Model Input Order)
-    # ==========================
-    expected_columns = [
-        "impressions", "clicks", "leads", "cpl", "cpc",
-        "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
-        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
-        "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
-    ]
+# ==========================
+# 4. Ensure Column Order (Matching Model Input Order)
+# ==========================
+expected_columns = [
+    "impressions", "clicks", "leads", "cpl", "cpc",
+    "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
+    "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
+    "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
+]
 
-    # Urutkan kolom sesuai dengan urutan yang diharapkan
-    input_data = input_data[expected_columns]
+# Urutkan kolom sesuai dengan urutan yang diharapkan
+input_data = input_data[expected_columns]
 
-    # **Pastikan scaler sudah di-fit sebelum transformasi**
-    if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
-        st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
-        st.stop()
+# **Pastikan scaler sudah di-fit sebelum transformasi**
+if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
+    st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
+    st.stop()
 
-    # Log transformation input
-    input_data_log = np.log1p(input_data)
+# Log transformation input
+input_data_log = np.log1p(input_data)
 
-    # Scaling input
+# Scaling input
+try:
+    input_scaled = scaler_X.transform(input_data_log)
+except Exception as e:
+    st.error(f"Error saat scaling input: {e}")
+    st.stop()
+
+# ==========================
+# 5. Model Prediction
+# ==========================
+if st.button("Calculate"):
     try:
-        input_scaled = scaler_X.transform(input_data_log)
+        with st.spinner("Predicting..."):
+            # Prediksi dengan model
+            pred_scaled = model.predict(input_scaled)
+
+            # Inverse transform hasil prediksi
+            pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
+            predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
+            predicted_cost = predicted_cost * 1.05  # Tambahkan 5% pada hasil prediksi
+
+        # Tampilkan hasil prediksi
+        st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+
     except Exception as e:
-        st.error(f"Error saat scaling input: {e}")
-        st.stop()
-
-    # ==========================
-    # 5. Model Prediction
-    # ==========================
-    if st.button("Calculate"):
-        try:
-            with st.spinner("Predicting..."):
-                # Prediksi dengan model
-                pred_scaled = model.predict(input_scaled)
-
-                # Inverse transform hasil prediksi
-                pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
-                predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-                predicted_cost = predicted_cost * 1.05  # Tambahkan 5% pada hasil prediksi
-
-            # Tampilkan hasil prediksi
-            st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
-
-        except Exception as e:
-            st.error("Terjadi kesalahan saat prediksi.")
-            st.text(traceback.format_exc())  # Menampilkan log lengkap error
+        st.error("Terjadi kesalahan saat prediksi.")
+        st.text(traceback.format_exc())  # Menampilkan log lengkap error
 
 # ==========================
 # Footer (Copyright & Remarks)
