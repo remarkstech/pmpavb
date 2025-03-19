@@ -128,7 +128,7 @@ if st.button("Calculate"):
             predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
             predicted_cost = predicted_cost * 1  #hasil prediksi
             # Menghitung rentang estimasi biaya
-            lower_bound = predicted_cost * 0.96
+            lower_bound = predicted_cost * 0.95
             upper_bound = predicted_cost * 1.15
 
             # Menampilkan estimasi biaya dalam rentang
