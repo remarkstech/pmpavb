@@ -46,8 +46,8 @@ st.title("Media Plan Automation")
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
 clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
 leads = st.number_input("Leads", min_value=0.0, format="%.0f")
-cpl = st.number_input("CPL", min_value=0.0, format="%.0f")
-cpc = st.number_input("CPC", min_value=0.0, format="%.0f")
+cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
+cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
 
 # Dropdown untuk memilih industri, dengan placeholder yang tidak bisa dipilih
 industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
