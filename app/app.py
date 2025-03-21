@@ -49,7 +49,7 @@ st.title("Media Plan Automation")
 st.markdown("""
     **Instructions:**
     1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
-    2. Select the Industry and Campaign Type.
+    2. Select the Industry and Campaign Type (Leave as is it if you want to do overall prediction.
     3. Click 'Calculate Cost' to get the cost estimation.
     4. Use 'Reset Inputs' to clear all inputs.
 """)
@@ -83,8 +83,8 @@ input_data = pd.DataFrame([{
     "impressions": impressions,
     "clicks": clicks,
     "leads": leads,
-    "cpl": cpl,
     "cpc": cpc,
+    "cpl": cpl
     **{f"source_{source}": source_dict[source] for source in sources[1:]},  # Exclude default option
     **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}  # Exclude default option
 }])
@@ -110,7 +110,7 @@ if st.button("Calculate Cost"):
             pred_scaled = model.predict(input_scaled)
             pred_log = scaler_y.inverse_transform(pred_scaled)
             predicted_cost = np.expm1(pred_log)
-            predicted_cost = predicted_cost * 1.05
+            predicted_cost = predicted_cost * 1.03
 
             # Handle margin calculation
             if margin == 0:
