@@ -49,13 +49,13 @@ st.title("Media Plan Automation")
 st.markdown("""
     **Instructions:**
     1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
-    2. Select the Industry and Campaign Type (Leave as is it if you want to do overall prediction.
+    2. Select the Industry and Campaign Type (Leave as is it if you want to do overall prediction).
     3. Click 'Calculate Cost' to get the cost estimation.
     4. Use 'Reset Inputs' to clear all inputs.
 """)
 
 # Inputs
-margin = st.number_input("Margin", min_value=0.0, format="%.0f", value=0.0)
+margin = st.number_input("Margin (%)", min_value=0.0, format="%.0f", value=0.0)
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=0.0)
 clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=0.0)
 leads = st.number_input("Leads", min_value=0.0, format="%.0f", value=0.0)
