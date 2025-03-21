@@ -124,7 +124,8 @@ elif mode == "Cari Fitur dari Cost":
 
     # Looping optimasi
     for step in range(100):
-        optimizer.minimize(loss_fn, var_list=[initial_features])
+        initial_features = tf.Variable(np.ones((1, scaler_X.n_features_in_)), dtype=tf.float32)
+
 
     # Inverse transform hasil fitur
     optimized_features = scaler_X.inverse_transform(initial_features.numpy())
