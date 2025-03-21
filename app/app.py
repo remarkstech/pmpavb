@@ -105,50 +105,56 @@ if mode == "Prediksi Cost dari Fitur":
             st.text(traceback.format_exc())
 
 elif mode == "Cari Fitur dari Cost":
-    # Input target cost
+    st.subheader("Cari Fitur berdasarkan Target Cost")
+
+    # Input target cost dari pengguna
     target_cost = st.number_input("Masukkan Target Cost", min_value=0.0, format="%.0f")
 
-    # Inisialisasi fitur awal (random atau default)
-    initial_features = tf.Variable(np.ones((1, scaler_X.n_features_in_)), dtype=tf.float32)
-
-    # Optimizer
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
-
-    # Transformasi cost ke bentuk yang sesuai dengan model
-    target_cost_scaled = scaler_y.transform(np.log1p([[target_cost]]))
-
-    # Fungsi loss: selisih prediksi dengan target cost
-    def loss_fn():
-        predicted_cost = model(initial_features)
-        return tf.abs(predicted_cost - target_cost_scaled)
-
-    # Looping optimasi
-    for step in range(100):
-        initial_features = tf.Variable(np.ones((1, scaler_X.n_features_in_)), dtype=tf.float32)
-
-
-    # Inverse transform hasil fitur
-    optimized_features = scaler_X.inverse_transform(initial_features.numpy())
-    optimized_features_exp = np.expm1(optimized_features)
-
-    # Buat DataFrame hasil optimasi
-    feature_names = [
-        "Impressions", "Clicks", "Leads", "CPL", "CPC",
-        "Source_DISC", "Source_FB", "Source_IG", "Source_PMAX", "Source_SEM",
-        "Industry_AUTOMOTIVE", "Industry_EDUCATION", "Industry_FOOD_MANUFACTURE", 
-        "Industry_LIFT_DISTRIBUTOR", "Industry_PROPERTY"
-    ]
-    
-    feature_df = pd.DataFrame([optimized_features_exp[0]], columns=feature_names)
-    
-    # Format nilai angka agar lebih rapi
-    numeric_cols = ["Impressions", "Clicks", "Leads", "CPL", "CPC"]
-    feature_df[numeric_cols] = feature_df[numeric_cols].applymap(lambda x: f"{x:,.2f}")
-    
-    # Tampilkan hasil dalam bentuk tabel
+    # Tombol untuk menjalankan optimasi
     if st.button("Cari Fitur yang Sesuai"):
-        st.subheader("Fitur yang cocok untuk mencapai target cost:")
-        st.dataframe(feature_df.style.format(precision=2))
+        with st.spinner("Menghitung fitur optimal..."):
+
+            # Inisialisasi fitur awal (random)
+            initial_features = tf.Variable(np.random.rand(1, scaler_X.n_features_in_), dtype=tf.float32)
+
+            # Optimizer
+            optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
+
+            # Transformasi target cost ke bentuk yang sesuai dengan model
+            target_cost_scaled = scaler_y.transform(np.log1p([[target_cost]]))
+
+            # Fungsi loss: selisih antara prediksi model dengan target cost
+            def loss_fn():
+                predicted_cost = model(initial_features)  # Prediksi cost dari model
+                return tf.reduce_mean(tf.abs(predicted_cost - target_cost_scaled))  # Hitung loss
+
+            # Proses optimasi
+            for step in range(200):  # Iterasi lebih banyak untuk hasil lebih baik
+                optimizer.minimize(loss_fn, var_list=[initial_features])
+                if step % 20 == 0:
+                    st.text(f"Step {step}: Loss = {loss_fn().numpy()}")  # Debugging
+
+            # Inverse transform hasil fitur
+            optimized_features = scaler_X.inverse_transform(initial_features.numpy())
+            optimized_features_exp = np.expm1(optimized_features)
+
+            # Buat DataFrame hasil optimasi
+            feature_names = [
+                "Impressions", "Clicks", "Leads", "CPL", "CPC",
+                "Source_DISC", "Source_FB", "Source_IG", "Source_PMAX", "Source_SEM",
+                "Industry_AUTOMOTIVE", "Industry_EDUCATION", "Industry_FOOD_MANUFACTURE", 
+                "Industry_LIFT_DISTRIBUTOR", "Industry_PROPERTY"
+            ]
+            feature_df = pd.DataFrame([optimized_features_exp[0]], columns=feature_names)
+
+            # Format nilai angka agar lebih rapi
+            numeric_cols = ["Impressions", "Clicks", "Leads", "CPL", "CPC"]
+            feature_df[numeric_cols] = feature_df[numeric_cols].applymap(lambda x: f"{x:,.2f}")
+
+            # Tampilkan hasil dalam bentuk tabel
+            st.subheader("Fitur yang cocok untuk mencapai target cost:")
+            st.dataframe(feature_df.style.format(precision=2))
+
 
 # ==========================
 # Footer
