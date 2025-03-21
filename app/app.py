@@ -51,54 +51,23 @@ st.markdown("""
     1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
     2. Select the Industry and Campaign Type.
     3. Click 'Calculate Cost' to get the cost estimation.
-    4. Use 'Undo' to revert to the previous inputs.
-    5. Use 'Reset Inputs' to clear all inputs.
+    4. Use 'Reset Inputs' to clear all inputs.
 """)
 
-# Initialize Session State
-if "previous_inputs" not in st.session_state:
-    st.session_state.previous_inputs = {
-        "margin": 0.0,
-        "impressions": 0.0,
-        "clicks": 0.0,
-        "leads": 0.0,
-        "cpl": 0.0,
-        "cpc": 0.0,
-        "selected_source": "Select Campaign Type",
-        "selected_industry": "Select Industry Type"
-    }
-
 # Inputs
-margin = st.number_input("Margin", min_value=0.0, format="%.0f", value=st.session_state.previous_inputs["margin"])
-impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=st.session_state.previous_inputs["impressions"])
-clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=st.session_state.previous_inputs["clicks"])
-leads = st.number_input("Leads", min_value=0.0, format="%.0f", value=st.session_state.previous_inputs["leads"])
-cpl = st.number_input("CPL", min_value=0.0, format="%.2f", value=st.session_state.previous_inputs["cpl"])
-cpc = st.number_input("CPC", min_value=0.0, format="%.2f", value=st.session_state.previous_inputs["cpc"])
+margin = st.number_input("Margin", min_value=0.0, format="%.0f", value=0.0)
+impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=0.0)
+clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=0.0)
+leads = st.number_input("Leads", min_value=0.0, format="%.0f", value=0.0)
+cpl = st.number_input("CPL", min_value=0.0, format="%.2f", value=0.0)
+cpc = st.number_input("CPC", min_value=0.0, format="%.2f", value=0.0)
 
 # Add default options for Campaign Type and Industry
 sources = ['Select Campaign Type', 'DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
 industries = ['Select Industry Type', "AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
 
-selected_source = st.selectbox("Campaign Type", sources, index=sources.index(st.session_state.previous_inputs["selected_source"]))
-selected_industry = st.selectbox("Industry", industries, index=industries.index(st.session_state.previous_inputs["selected_industry"]))
-
-# Save current inputs to Session State
-current_inputs = {
-    "margin": margin,
-    "impressions": impressions,
-    "clicks": clicks,
-    "leads": leads,
-    "cpl": cpl,
-    "cpc": cpc,
-    "selected_source": selected_source,
-    "selected_industry": selected_industry
-}
-
-# Undo Button
-if st.button("Undo"):
-    st.session_state.previous_inputs = st.session_state.get("previous_inputs", current_inputs)
-    st.experimental_rerun()
+selected_source = st.selectbox("Campaign Type", sources, index=0)  # Default to "Select Campaign Type"
+selected_industry = st.selectbox("Industry", industries, index=0)  # Default to "Select Industry Type"
 
 # One-hot encoding industri & source
 industry_dict = {industry: 0 for industry in industries[1:]}  # Exclude default option
@@ -158,20 +127,7 @@ if st.button("Calculate Cost"):
 
 # Reset Button
 if st.button("Reset Inputs"):
-    st.session_state.previous_inputs = {
-        "margin": 0.0,
-        "impressions": 0.0,
-        "clicks": 0.0,
-        "leads": 0.0,
-        "cpl": 0.0,
-        "cpc": 0.0,
-        "selected_source": "Select Campaign Type",
-        "selected_industry": "Select Industry Type"
-    }
     st.experimental_rerun()
-
-# Update Session State with current inputs
-st.session_state.previous_inputs = current_inputs
 
 # ==========================
 # Footer
