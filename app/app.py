@@ -54,7 +54,7 @@ st.markdown("""
 """)
 
 # Inputs
-margin = st.number_input("Margin", min_value=1.0, format="%.0f")
+margin = st.number_input("Margin", min_value=0.0, format="%.0f")
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
 clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
 leads = st.number_input("Leads", min_value=0.0, format="%.0f")
@@ -106,8 +106,14 @@ if st.button("Calculate Cost"):
             pred_log = scaler_y.inverse_transform(pred_scaled)
             predicted_cost = np.expm1(pred_log)
             predicted_cost = predicted_cost * 1.05
-            predicted_cost2 = predicted_cost * (1 + (margin / 100))
+
+            # Handle margin calculation
+            if margin == 0:
+                predicted_cost2 = predicted_cost
+            else:
+                predicted_cost2 = predicted_cost * (1 + (margin / 100))
             
+            # Display results
             st.success(f"**Cost Estimation:** IDR {predicted_cost[0][0]:,.0f}")
             st.success(f"**Cost Estimation with Margin:** IDR {predicted_cost2[0][0]:,.0f}")
         except Exception as e:
