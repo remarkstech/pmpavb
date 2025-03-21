@@ -13,7 +13,7 @@ import datetime
 @st.cache_resource
 def load_model():
     """Load model hanya sekali untuk mencegah reload berulang."""
-    model_path = os.path.abspath("dl_model3.h5")  # Pastikan path absolut
+    model_path = os.path.abspath("dl_model3.h5")  
     return tf.keras.models.load_model(model_path)
 
 @st.cache_resource
@@ -38,113 +38,120 @@ with st.spinner("Loading model & scalers..."):
 # ==========================
 # 2. Streamlit Interface
 # ==========================
-# Tambahkan logo sebelum judul
-st.image("logo_final-02.png", width=100)  # Pastikan file ada di lokasi yang benar
+st.image("logo_final-02.png", width=100)
 st.title("Media Plan Automation")
 
-# Input user
-impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
-clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
-leads = st.number_input("Leads", min_value=0.0, format="%.0f")
-cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
-cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
+# Pilihan Mode: Prediksi Cost atau Cari Fitur
+mode = st.selectbox("Pilih Mode", ["Prediksi Cost dari Fitur", "Cari Fitur dari Cost"])
 
-# Dropdown untuk memilih industri, dengan placeholder yang tidak bisa dipilih
-industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-selected_industry = st.selectbox("Industry Select (Leave as is if industry not listed.)", ["Select Industry"] + industries, index=0)  # Tambahkan "Select Industry" sebagai placeholder
+if mode == "Prediksi Cost dari Fitur":
+    # Input user untuk prediksi cost
+    impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
+    clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
+    leads = st.number_input("Leads", min_value=0.0, format="%.0f")
+    cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
+    cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
 
+    industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+    selected_industry = st.selectbox("Industry", industries)
 
-# Dropdown untuk memilih campaign type, dengan placeholder yang tidak bisa dipilih
-sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-selected_source = st.selectbox("Campaign Type (Leave as is if no specified source.)", ["Campaign Type"] + sources)  # Tambahkan "Select Industry" sebagai placeholder
+    sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
+    selected_source = st.selectbox("Campaign Type", sources)
 
-# ==========================
-# 3. Prepare Input Data
-# ==========================
-# Cek apakah industri dipilih, jika belum beri peringatan
-# if selected_industry == "Select Industry":
-#     st.error("Please select a valid industry.")
-#     st.stop()  # Berhenti jika industri tidak dipilih
+    # One-hot encoding industri & source
+    industry_dict = {industry: 0 for industry in industries}
+    industry_dict[selected_industry] = 1
 
-# One-hot encoding industri
-industry_dict = {industry: 0 for industry in industries}  # Hanya encode industri yang valid
-industry_dict[selected_industry] = 1
-
-# Cek apakah source dipilih, jika tidak beri default 0
-source_dict = {source: 0 for source in sources}
-if selected_source != "Campaign Type":
+    source_dict = {source: 0 for source in sources}
     source_dict[selected_source] = 1
 
-# Buat DataFrame dari input user
-input_data = pd.DataFrame([{
-    "impressions": impressions,
-    "clicks": clicks,
-    "leads": leads,
-    "cpl": cpl,
-    "cpc": cpc,
-    **{f"source_{source}": source_dict[source] for source in sources},
-    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
-}])
+    # Buat DataFrame
+    input_data = pd.DataFrame([{
+        "impressions": impressions,
+        "clicks": clicks,
+        "leads": leads,
+        "cpl": cpl,
+        "cpc": cpc,
+        **{f"source_{source}": source_dict[source] for source in sources},
+        **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+    }])
 
-# ==========================
-# 4. Ensure Column Order (Matching Model Input Order)
-# ==========================
-expected_columns = [
-    "impressions", "clicks", "leads", "cpl", "cpc",
-    "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
-    "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
-    "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
-]
+    # Urutkan sesuai model
+    expected_columns = [
+        "impressions", "clicks", "leads", "cpl", "cpc",
+        "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
+        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
+        "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
+    ]
+    input_data = input_data[expected_columns]
 
-# Urutkan kolom sesuai dengan urutan yang diharapkan
-input_data = input_data[expected_columns]
-
-# **Pastikan scaler sudah di-fit sebelum transformasi**
-if not hasattr(scaler_X, "mean_") or not hasattr(scaler_y, "mean_"):
-    st.error("Scaler belum di-fit dengan data. Pastikan scaler valid.")
-    st.stop()
-
-# Log transformation input
-input_data_log = np.log1p(input_data)
-
-# Scaling input
-try:
+    # Transformasi input
+    input_data_log = np.log1p(input_data)
     input_scaled = scaler_X.transform(input_data_log)
-except Exception as e:
-    st.error(f"Error saat scaling input: {e}")
-    st.stop()
+
+    # Prediksi cost
+    if st.button("Calculate Cost"):
+        try:
+            with st.spinner("Predicting..."):
+                pred_scaled = model.predict(input_scaled)
+                pred_log = scaler_y.inverse_transform(pred_scaled)
+                predicted_cost = np.expm1(pred_log)[0, 0]  
+                lower_bound = predicted_cost * 0.90
+                upper_bound = predicted_cost * 1.1
+
+                st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
+        except Exception as e:
+            st.error("Terjadi kesalahan saat prediksi.")
+            st.text(traceback.format_exc())
+
+elif mode == "Cari Fitur dari Cost":
+    # Input target cost
+    target_cost = st.number_input("Masukkan Target Cost", min_value=0.0, format="%.0f")
+
+    # Inisialisasi fitur awal (random atau default)
+    initial_features = tf.Variable(np.ones((1, scaler_X.n_features_in_)), dtype=tf.float32)
+
+    # Optimizer
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
+
+    # Transformasi cost ke bentuk yang sesuai dengan model
+    target_cost_scaled = scaler_y.transform(np.log1p([[target_cost]]))
+
+    # Fungsi loss: selisih prediksi dengan target cost
+    def loss_fn():
+        predicted_cost = model(initial_features)
+        return tf.abs(predicted_cost - target_cost_scaled)
+
+    # Looping optimasi
+    for step in range(100):
+        optimizer.minimize(loss_fn, var_list=[initial_features])
+
+    # Inverse transform hasil fitur
+    optimized_features = scaler_X.inverse_transform(initial_features.numpy())
+    optimized_features_exp = np.expm1(optimized_features)
+
+    # Buat DataFrame hasil optimasi
+    feature_names = [
+        "Impressions", "Clicks", "Leads", "CPL", "CPC",
+        "Source_DISC", "Source_FB", "Source_IG", "Source_PMAX", "Source_SEM",
+        "Industry_AUTOMOTIVE", "Industry_EDUCATION", "Industry_FOOD_MANUFACTURE", 
+        "Industry_LIFT_DISTRIBUTOR", "Industry_PROPERTY"
+    ]
+    
+    feature_df = pd.DataFrame([optimized_features_exp[0]], columns=feature_names)
+    
+    # Format nilai angka agar lebih rapi
+    numeric_cols = ["Impressions", "Clicks", "Leads", "CPL", "CPC"]
+    feature_df[numeric_cols] = feature_df[numeric_cols].applymap(lambda x: f"{x:,.2f}")
+    
+    # Tampilkan hasil dalam bentuk tabel
+    if st.button("Cari Fitur yang Sesuai"):
+        st.subheader("Fitur yang cocok untuk mencapai target cost:")
+        st.dataframe(feature_df.style.format(precision=2))
 
 # ==========================
-# 5. Model Prediction
+# Footer
 # ==========================
-if st.button("Calculate"):
-    try:
-        with st.spinner("Predicting..."):
-            # Prediksi dengan model
-            pred_scaled = model.predict(input_scaled)
-
-            # Inverse transform hasil prediksi
-            pred_log = scaler_y.inverse_transform(pred_scaled)  # Balikkan scaling ke bentuk asli
-            predicted_cost = np.expm1(pred_log)[0, 0]  # Kembalikan hasil dari log transformasi
-            predicted_cost = predicted_cost * 1  #hasil prediksi
-            # Menghitung rentang estimasi biaya
-            lower_bound = predicted_cost * 0.90
-            upper_bound = predicted_cost * 1.1
-
-            # Menampilkan estimasi biaya dalam rentang
-            st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
-
-
-        # # Tampilkan hasil prediksi
-        # st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
-
-    except Exception as e:
-        st.error("Terjadi kesalahan saat prediksi.")
-        st.text(traceback.format_exc())  # Menampilkan log lengkap error
-
-# ==========================
-# Footer (Copyright & Remarks)
-# ==========================
-current_year = datetime.datetime.now().year  # Ambil tahun saat ini
-st.markdown("---")  # Pembatas garis
+current_year = datetime.datetime.now().year
+st.markdown("---")
 st.markdown(f"© {current_year} Remarks Asia. All Rights Reserved.")
