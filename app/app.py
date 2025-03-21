@@ -45,7 +45,7 @@ st.title("Media Plan Automation")
 # margin = st.number_input("Margin", min_value=1.0, format="%.0f")
 
     # Input user untuk prediksi cost
-    margin = st.number_input("Margin", min_value=1.0, format="%.0f")
+margin = st.number_input("Margin", min_value=1.0, format="%.0f")
     impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
     clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
     leads = st.number_input("Leads", min_value=0.0, format="%.0f")
