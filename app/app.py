@@ -109,7 +109,7 @@ elif mode == "Cari Fitur dari Cost":
     target_cost = st.number_input("Masukkan Target Cost", min_value=0.0, format="%.0f")
 
     # Inisialisasi fitur awal dengan nilai random kecil
-    initial_features = tf.Variable(np.random.rand(1, scaler_X.n_features_in_), dtype=tf.float32)
+    initial_features = tf.Variable(np.random.rand(1, scaler_X.n_features_in_), dtype=tf.float32, trainable=True)
 
     # Optimizer
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
@@ -117,14 +117,14 @@ elif mode == "Cari Fitur dari Cost":
     # Transformasi cost ke bentuk yang sesuai dengan model
     target_cost_scaled = tf.constant(scaler_y.transform(np.log1p([[target_cost]])), dtype=tf.float32)
 
-    # Fungsi loss: selisih prediksi dengan target cost
-    def loss_fn():
-        predicted_cost = model(initial_features)
-        return tf.reduce_mean(tf.abs(predicted_cost - target_cost_scaled))
-
     # Looping optimasi
     for step in range(200):  # Bisa ditambah jika perlu
-        optimizer.minimize(loss_fn, var_list=[initial_features])
+        with tf.GradientTape() as tape:
+            predicted_cost = model(initial_features)
+            loss = tf.reduce_mean(tf.abs(predicted_cost - target_cost_scaled))
+
+        grads = tape.gradient(loss, [initial_features])  # Hitung gradien
+        optimizer.apply_gradients(zip(grads, [initial_features]))  # Update fitur
 
     # Inverse transform hasil fitur
     optimized_features = scaler_X.inverse_transform(initial_features.numpy())
@@ -148,6 +148,7 @@ elif mode == "Cari Fitur dari Cost":
     if st.button("Cari Fitur yang Sesuai"):
         st.subheader("Fitur yang cocok untuk mencapai target cost:")
         st.dataframe(feature_df.style.format(precision=2))
+
 
 
 # ==========================
