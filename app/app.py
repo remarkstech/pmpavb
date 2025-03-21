@@ -104,14 +104,14 @@ input_scaled = scaler_X.transform(input_data_log)
 # Prediksi cost
 if st.button("Calculate Cost"):
     with st.spinner("Predicting..."):
-        try:
-            # Validasi input
-            if selected_source == "Select Campaign Type":
-                st.error("Please select a valid Campaign Type.")
-                st.stop()
-            if selected_industry == "Select Industry Type":
-                st.error("Please select a valid Industry.")
-                st.stop()
+        # try:
+        #     # Validasi input
+        #     if selected_source == "Select Campaign Type":
+        #         st.error("Please select a valid Campaign Type.")
+        #         st.stop()
+        #     if selected_industry == "Select Industry Type":
+        #         st.error("Please select a valid Industry.")
+        #         st.stop()
 
             # Make prediction
             pred_scaled = model.predict(input_scaled)
