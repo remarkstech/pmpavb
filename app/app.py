@@ -110,7 +110,7 @@ if st.button("Calculate Cost"):
             pred_scaled = model.predict(input_scaled)
             pred_log = scaler_y.inverse_transform(pred_scaled)
             predicted_cost = np.expm1(pred_log)
-            predicted_cost = predicted_cost * 1.03
+            predicted_cost = predicted_cost
 
             # Handle margin calculation
             if margin == 0:
