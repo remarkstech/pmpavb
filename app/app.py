@@ -61,18 +61,21 @@ leads = st.number_input("Leads", min_value=0.0, format="%.0f")
 cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
 cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
 
-industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+# Add default options for Campaign Type and Industry
+sources = ['Select Campaign Type', 'DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
+industries = ['Select Industry Type', "AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+
+selected_source = st.selectbox("Campaign Type", sources)
 selected_industry = st.selectbox("Industry", industries)
 
-sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-selected_source = st.selectbox("Campaign Type", sources)
-
 # One-hot encoding industri & source
-industry_dict = {industry: 0 for industry in industries}
-industry_dict[selected_industry] = 1
+industry_dict = {industry: 0 for industry in industries[1:]}  # Exclude default option
+if selected_industry != "Select Industry Type":
+    industry_dict[selected_industry] = 1
 
-source_dict = {source: 0 for source in sources}
-source_dict[selected_source] = 1
+source_dict = {source: 0 for source in sources[1:]}  # Exclude default option
+if selected_source != "Select Campaign Type":
+    source_dict[selected_source] = 1
 
 # Buat DataFrame
 input_data = pd.DataFrame([{
@@ -81,8 +84,8 @@ input_data = pd.DataFrame([{
     "leads": leads,
     "cpl": cpl,
     "cpc": cpc,
-    **{f"source_{source}": source_dict[source] for source in sources},
-    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+    **{f"source_{source}": source_dict[source] for source in sources[1:]},  # Exclude default option
+    **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}  # Exclude default option
 }])
 
 # Urutkan sesuai model
@@ -102,6 +105,15 @@ input_scaled = scaler_X.transform(input_data_log)
 if st.button("Calculate Cost"):
     with st.spinner("Predicting..."):
         try:
+            # Validasi input
+            if selected_source == "Select Campaign Type":
+                st.error("Please select a valid Campaign Type.")
+                st.stop()
+            if selected_industry == "Select Industry Type":
+                st.error("Please select a valid Industry.")
+                st.stop()
+
+            # Make prediction
             pred_scaled = model.predict(input_scaled)
             pred_log = scaler_y.inverse_transform(pred_scaled)
             predicted_cost = np.expm1(pred_log)
