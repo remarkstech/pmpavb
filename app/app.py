@@ -59,8 +59,8 @@ margin = st.number_input("Margin", min_value=0.0, format="%.0f", value=0.0)
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=0.0)
 clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=0.0)
 leads = st.number_input("Leads", min_value=0.0, format="%.0f", value=0.0)
-cpl = st.number_input("CPL", min_value=0.0, format="%.2f", value=0.0)
 cpc = st.number_input("CPC", min_value=0.0, format="%.2f", value=0.0)
+cpl = st.number_input("CPL", min_value=0.0, format="%.2f", value=0.0)
 
 # Add default options for Campaign Type and Industry
 sources = ['Select Campaign Type', 'DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
@@ -83,8 +83,8 @@ input_data = pd.DataFrame([{
     "impressions": impressions,
     "clicks": clicks,
     "leads": leads,
+    "cpl": cpl,
     "cpc": cpc,
-    "cpl": cpl
     **{f"source_{source}": source_dict[source] for source in sources[1:]},  # Exclude default option
     **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}  # Exclude default option
 }])
