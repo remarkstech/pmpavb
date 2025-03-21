@@ -13,8 +13,12 @@ import datetime
 @st.cache_resource
 def load_model():
     """Load model hanya sekali untuk mencegah reload berulang."""
-    model_path = os.path.abspath("dl_model3.h5")  
-    return tf.keras.models.load_model(model_path)
+    model_path = os.path.abspath("dl_model3.h5")
+    try:
+        return tf.keras.models.load_model(model_path)
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.stop()
 
 @st.cache_resource
 def load_scalers():
@@ -41,73 +45,82 @@ with st.spinner("Loading model & scalers..."):
 st.image("logo_final-02.png", width=100)
 st.title("Media Plan Automation")
 
-# Pilihan Mode: Prediksi Cost atau Cari Fitur
-# margin = st.number_input("Margin", min_value=1.0, format="%.0f")
+# Instructions
+st.markdown("""
+    **Instructions:**
+    1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
+    2. Select the Industry and Campaign Type.
+    3. Click 'Calculate Cost' to get the cost estimation.
+""")
 
-    # Input user untuk prediksi cost
+# Inputs
 margin = st.number_input("Margin", min_value=1.0, format="%.0f")
-    impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
-    clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
-    leads = st.number_input("Leads", min_value=0.0, format="%.0f")
-    cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
-    cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
+impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
+clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
+leads = st.number_input("Leads", min_value=0.0, format="%.0f")
+cpl = st.number_input("CPL", min_value=0.0, format="%.2f")
+cpc = st.number_input("CPC", min_value=0.0, format="%.2f")
 
-    industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-    selected_industry = st.selectbox("Industry", industries)
+industries = ["AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
+selected_industry = st.selectbox("Industry", industries)
 
-    sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
-    selected_source = st.selectbox("Campaign Type", sources)
+sources = ['DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
+selected_source = st.selectbox("Campaign Type", sources)
 
-    # One-hot encoding industri & source
-    industry_dict = {industry: 0 for industry in industries}
-    industry_dict[selected_industry] = 1
+# One-hot encoding industri & source
+industry_dict = {industry: 0 for industry in industries}
+industry_dict[selected_industry] = 1
 
-    source_dict = {source: 0 for source in sources}
-    source_dict[selected_source] = 1
+source_dict = {source: 0 for source in sources}
+source_dict[selected_source] = 1
 
-    # Buat DataFrame
-    input_data = pd.DataFrame([{
-        "impressions": impressions,
-        "clicks": clicks,
-        "leads": leads,
-        "cpl": cpl,
-        "cpc": cpc,
-        **{f"source_{source}": source_dict[source] for source in sources},
-        **{f"industry_{industry}": industry_dict[industry] for industry in industries}
-    }])
+# Buat DataFrame
+input_data = pd.DataFrame([{
+    "impressions": impressions,
+    "clicks": clicks,
+    "leads": leads,
+    "cpl": cpl,
+    "cpc": cpc,
+    **{f"source_{source}": source_dict[source] for source in sources},
+    **{f"industry_{industry}": industry_dict[industry] for industry in industries}
+}])
 
-    # Urutkan sesuai model
-    expected_columns = [
-        "impressions", "clicks", "leads", "cpl", "cpc",
-        "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
-        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
-        "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
-    ]
-    input_data = input_data[expected_columns]
+# Urutkan sesuai model
+expected_columns = [
+    "impressions", "clicks", "leads", "cpl", "cpc",
+    "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
+    "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
+    "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
+]
+input_data = input_data[expected_columns]
 
-    # Transformasi input
-    input_data_log = np.log1p(input_data)
-    input_scaled = scaler_X.transform(input_data_log)
+# Transformasi input
+input_data_log = np.log1p(input_data)
+input_scaled = scaler_X.transform(input_data_log)
 
-    # Prediksi cost
-    if st.button("Calculate Cost"):
+# Prediksi cost
+if st.button("Calculate Cost"):
+    with st.spinner("Predicting..."):
         try:
-            with st.spinner("Predicting..."):
-                pred_scaled = model.predict(input_scaled)
-                pred_log = scaler_y.inverse_transform(pred_scaled)
-                predicted_cost = np.expm1(pred_log)
-                predicted_cost = predicted_cost * 1.05
-                predicted_cost2 = predicted_cost * (1 + (margin/100))
-                
-                st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
-                st.success(f"Cost Estimation with margin : IDR {predicted_cost2:,.0f}")
-        except Exception as e:
-            st.error("Terjadi kesalahan saat prediksi.")
-            st.text(traceback.format_exc())
+            pred_scaled = model.predict(input_scaled)
+            pred_log = scaler_y.inverse_transform(pred_scaled)
+            predicted_cost = np.expm1(pred_log)
+            predicted_cost = predicted_cost * 1.05
+            predicted_cost2 = predicted_cost * (1 + (margin / 100))
             
+            st.success(f"**Cost Estimation:** IDR {predicted_cost[0][0]:,.0f}")
+            st.success(f"**Cost Estimation with Margin:** IDR {predicted_cost2[0][0]:,.0f}")
+        except Exception as e:
+            st.error("An error occurred during prediction.")
+            st.text(traceback.format_exc())
+
+# Reset Button
+if st.button("Reset Inputs"):
+    st.experimental_rerun()
+
 # ==========================
 # Footer
 # ==========================
 current_year = datetime.datetime.now().year
 st.markdown("---")
-st.markdown(f"© {current_year} Remarks Asia. All Rights Reserved.")
+st.markdown(f"<div style='text-align: center;'>© {current_year} Remarks Asia. All Rights Reserved.</div>", unsafe_allow_html=True)
