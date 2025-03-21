@@ -42,9 +42,8 @@ st.image("logo_final-02.png", width=100)
 st.title("Media Plan Automation")
 
 # Pilihan Mode: Prediksi Cost atau Cari Fitur
-mode = st.selectbox("Pilih Mode", ["Prediksi Cost dari Fitur", "Cari Fitur dari Cost"])
+margin = st.number_input("Margin", min_value=1.0, format="%.0f")
 
-if mode == "Prediksi Cost dari Fitur":
     # Input user untuk prediksi cost
     impressions = st.number_input("Impressions", min_value=0.0, format="%.0f")
     clicks = st.number_input("Clicks", min_value=0.0, format="%.0f")
@@ -95,62 +94,16 @@ if mode == "Prediksi Cost dari Fitur":
             with st.spinner("Predicting..."):
                 pred_scaled = model.predict(input_scaled)
                 pred_log = scaler_y.inverse_transform(pred_scaled)
-                predicted_cost = np.expm1(pred_log)[0, 0]  
-                lower_bound = predicted_cost * 0.90
-                upper_bound = predicted_cost * 1.1
-
-                st.success(f"Cost Estimation: IDR {lower_bound:,.0f} - IDR {upper_bound:,.0f}")
+                predicted_cost = np.expm1(pred_log)
+                predicted_cost = predicted_cost * 1.05
+                predicted_cost2 = predicted_cost * (1 + (margin/100))
+                
+                st.success(f"Cost Estimation: IDR {predicted_cost:,.0f}")
+                st.success(f"Cost Estimation with margin : IDR {predicted_cost2:,.0f}")
         except Exception as e:
             st.error("Terjadi kesalahan saat prediksi.")
             st.text(traceback.format_exc())
-
-# elif mode == "Cari Fitur dari Cost":
-#     # Input target cost
-#     target_cost = st.number_input("Masukkan Target Cost", min_value=0.0, format="%.0f")
-
-#     # Inisialisasi fitur awal dengan nilai random kecil
-#     initial_features = tf.Variable(np.random.rand(1, scaler_X.n_features_in_), dtype=tf.float32, trainable=True)
-
-#     # Optimizer
-#     optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
-
-#     # Transformasi cost ke bentuk yang sesuai dengan model
-#     target_cost_scaled = tf.constant(scaler_y.transform(np.log1p([[target_cost]])), dtype=tf.float32)
-
-#     # Looping optimasi
-#     for step in range(200):  # Bisa ditambah jika perlu
-#         with tf.GradientTape() as tape:
-#             predicted_cost = model(initial_features)
-#             loss = tf.reduce_mean(tf.abs(predicted_cost - target_cost_scaled))
-
-#         grads = tape.gradient(loss, [initial_features])  # Hitung gradien
-#         optimizer.apply_gradients(zip(grads, [initial_features]))  # Update fitur
-
-#     # Inverse transform hasil fitur
-#     optimized_features = scaler_X.inverse_transform(initial_features.numpy())
-#     optimized_features_exp = np.expm1(optimized_features)
-
-#     # Buat DataFrame hasil optimasi
-#     feature_names = [
-#         "Impressions", "Clicks", "Leads", "CPL", "CPC",
-#         "Source_DISC", "Source_FB", "Source_IG", "Source_PMAX", "Source_SEM",
-#         "Industry_AUTOMOTIVE", "Industry_EDUCATION", "Industry_FOOD_MANUFACTURE", 
-#         "Industry_LIFT_DISTRIBUTOR", "Industry_PROPERTY"
-#     ]
-    
-#     feature_df = pd.DataFrame([optimized_features_exp[0]], columns=feature_names)
-    
-#     # Format nilai angka agar lebih rapi
-#     numeric_cols = ["Impressions", "Clicks", "Leads", "CPL", "CPC"]
-#     feature_df[numeric_cols] = feature_df[numeric_cols].applymap(lambda x: f"{x:,.2f}")
-    
-#     # Tampilkan hasil dalam bentuk tabel
-#     if st.button("Cari Fitur yang Sesuai"):
-#         st.subheader("Fitur yang cocok untuk mencapai target cost:")
-#         st.dataframe(feature_df.style.format(precision=2))
-
-
-
+            
 # ==========================
 # Footer
 # ==========================
