@@ -119,8 +119,9 @@ if st.button("Calculate Cost"):
                 predicted_cost2 = predicted_cost * (1 + (margin / 100))
             
             # Display results
-            st.success(f"**Cost Estimation:** IDR {predicted_cost[0][0]:,.0f}")
-            if margin != 0:  # Hanya tampilkan jika margin bukan 0
+            if margin == 0:
+                st.success(f"**Cost Estimation:** IDR {predicted_cost[0][0]:,.0f}")
+            else:
                 st.success(f"**Cost Estimation with Margin:** IDR {predicted_cost2[0][0]:,.0f}")
         except Exception as e:
             st.error("An error occurred during prediction.")
