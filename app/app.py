@@ -103,15 +103,20 @@ elif model_choice == "Model 2 - Manual":
     st.markdown("### 🧮 Model 2 - Manual Formula (per platform)")
 
     with st.form("model2_form"):
-        st.write("Masukkan nilai untuk masing-masing platform:")
-        model2_data = {}
+        st.write("Masukkan Total Budget dan persentase masing-masing platform:")
+        
+        # Input untuk Total Budget
+        total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, value=0.0, format="%.0f")
 
-        for platform in ["Meta", "TikTok", "Google"]:
-            st.subheader(platform)
-            inv = st.number_input(f"Investment ({platform})", min_value=0.0, value=0.0, format="%.0f", key=f"{platform}_inv")
+        model2_data = {}
+        platforms = ["Meta", "TikTok", "Google"]
+
+        for platform in platforms:
+            st.subheader(f"{platform}")
+            inv_percent = st.number_input(f"Investment Percentage ({platform})", min_value=0.0, max_value=100.0, value=0.0, format="%.2f", key=f"{platform}_inv")
             cpc_val = st.number_input(f"CPC ({platform})", min_value=0.01, value=1000.0, format="%.2f", key=f"{platform}_cpc")
             ctr_val = st.number_input(f"CTR (%) ({platform})", min_value=0.01, value=1.0, format="%.2f", key=f"{platform}_ctr")
-            model2_data[platform] = {"inv": inv, "cpc": cpc_val, "ctr": ctr_val}
+            model2_data[platform] = {"inv_percent": inv_percent, "cpc": cpc_val, "ctr": ctr_val}
 
         submitted = st.form_submit_button("Calculate Model 2 Result (Manual)")
 
@@ -123,17 +128,19 @@ elif model_choice == "Model 2 - Manual":
 
         for platform, data in model2_data.items():
             try:
-                clicks = data["inv"] / data["cpc"] if data["cpc"] > 0 else 0
+                # Menghitung Investment per platform
+                inv = total_budget * (data["inv_percent"] / 100)
+                clicks = inv / data["cpc"] if data["cpc"] > 0 else 0
                 impressions = clicks / (data["ctr"] / 100) if data["ctr"] > 0 else 0
-                cpm = (data["inv"] / impressions) * 1000 if impressions > 0 else 0
+                cpm = (inv / impressions) * 1000 if impressions > 0 else 0
 
-                total_inv += data["inv"]
+                total_inv += inv
                 total_clicks += clicks
                 total_impressions += impressions
 
                 result_data.append({
                     "Platform": platform,
-                    "Investment (IDR)": f"{data['inv']:,.0f}",
+                    "Investment (IDR)": f"{inv:,.0f}",
                     "CPC (IDR)": f"{data['cpc']:,.2f}",
                     "CTR (%)": f"{data['ctr']:.2f}",
                     "Clicks": f"{clicks:,.0f}",
