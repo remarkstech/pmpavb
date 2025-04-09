@@ -1,6 +1,3 @@
-# ==========================
-# IMPORT LIBRARY
-# ==========================
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -11,37 +8,51 @@ import traceback
 import datetime
 
 # ==========================
-# LOAD MODEL & SCALERS (CACHED)
+# 1. Load Model & Scaler
 # ==========================
 @st.cache_resource
 def load_model():
-    model_path = os.path.abspath("dl_model3.h5")
-    return tf.keras.models.load_model(model_path)
+    try:
+        model_path = os.path.abspath("dl_model3.h5")
+        return tf.keras.models.load_model(model_path)
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.stop()
 
 @st.cache_resource
 def load_scalers():
-    scaler_X_path = os.path.abspath("scaler_X1.pkl")
-    scaler_y_path = os.path.abspath("scaler_y1.pkl")
-    scaler_X = joblib.load(scaler_X_path)
-    scaler_y = joblib.load(scaler_y_path)
-    return scaler_X, scaler_y
-
-model = load_model()
-scaler_X, scaler_y = load_scalers()
+    try:
+        scaler_X = joblib.load("scaler_X1.pkl")
+        scaler_y = joblib.load("scaler_y1.pkl")
+        return scaler_X, scaler_y
+    except Exception as e:
+        st.error(f"Error loading scalers: {e}")
+        st.stop()
 
 # ==========================
-# STREAMLIT UI
+# Start Streamlit App
 # ==========================
 st.image("logo_final-02.png", width=100)
 st.title("Media Plan Automation")
 
-model_choice = st.radio("Pilih Mode Prediksi:", ("Model 1 - AI", "Model 2 - Manual"))
+# Model Switch
+model_type = st.radio("Select Model Type", ["Model 1 (Prediction Model)", "Model 2 (Manual Calculation)"])
 
 # ==========================
-# MODEL 1
+# MODEL 1 - Neural Network
 # ==========================
-if model_choice == "Model 1 - AI":
-    st.markdown("### 🔮 Model 1 - AI Prediction")
+if model_type == "Model 1 (Prediction Model)":
+    with st.spinner("Loading model & scalers..."):
+        model = load_model()
+        scaler_X, scaler_y = load_scalers()
+
+    st.markdown("""
+    **Instructions:**
+    1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
+    2. Select the Industry and Campaign Type.
+    3. Click 'Calculate Cost' to get the cost estimation.
+    """)
+
     margin = st.number_input("Margin (%)", min_value=0.0, format="%.0f", value=0.0)
     impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=0.0)
     clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=0.0)
@@ -51,7 +62,6 @@ if model_choice == "Model 1 - AI":
 
     sources = ['Select Campaign Type', 'DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
     industries = ['Select Industry Type', "AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
-
     selected_source = st.selectbox("Campaign Type", sources, index=0)
     selected_industry = st.selectbox("Industry", industries, index=0)
 
@@ -69,78 +79,73 @@ if model_choice == "Model 1 - AI":
         "leads": leads,
         "cpl": cpl,
         "cpc": cpc,
-        **{f"source_{source}": source_dict[source] for source in sources[1:]},
-        **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}
+        **{f"source_{s}": source_dict[s] for s in sources[1:]},
+        **{f"industry_{i}": industry_dict[i] for i in industries[1:]}
     }])
 
     expected_columns = [
         "impressions", "clicks", "leads", "cpl", "cpc",
         "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
-        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE", 
+        "industry_AUTOMOTIVE", "industry_EDUCATION", "industry_FOOD MANUFACTURE",
         "industry_LIFT DISTRIBUTOR", "industry_PROPERTY"
     ]
     input_data = input_data[expected_columns]
+    input_scaled = scaler_X.transform(np.log1p(input_data))
 
-    input_data_log = np.log1p(input_data)
-    input_scaled = scaler_X.transform(input_data_log)
+    if st.button("Calculate Cost"):
+        with st.spinner("Predicting..."):
+            try:
+                pred_scaled = model.predict(input_scaled)
+                pred_log = scaler_y.inverse_transform(pred_scaled)
+                predicted_cost = np.expm1(pred_log)
 
-    if st.button("Calculate Cost (Model 1 - AI)"):
-        try:
-            pred_scaled = model.predict(input_scaled)
-            pred_log = scaler_y.inverse_transform(pred_scaled)
-            predicted_cost = np.expm1(pred_log)
-            predicted_cost2 = predicted_cost * (1 + (margin / 100)) if margin > 0 else predicted_cost
-
-            st.success(f"**Cost Estimation:** IDR {predicted_cost2[0][0]:,.0f}")
-        except Exception as e:
-            st.error("Error saat prediksi.")
-            st.text(traceback.format_exc())
+                final_cost = predicted_cost * (1 + (margin / 100)) if margin > 0 else predicted_cost
+                label = "**Cost Estimation with Margin:**" if margin > 0 else "**Cost Estimation:**"
+                st.success(f"{label} IDR {final_cost[0][0]:,.0f}")
+            except Exception as e:
+                st.error("An error occurred during prediction.")
+                st.text(traceback.format_exc())
 
 # ==========================
-# MODEL 2
+# MODEL 2 - Manual Calculation
 # ==========================
-elif model_choice == "Model 2 - Manual":
-    st.markdown("### 🧮 Model 2 - Manual Formula (per platform)")
+elif model_type == "Model 2 (Manual Calculation)":
+    st.markdown("### Manual Cost Estimation")
+    total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, format="%.0f", value=0.0)
 
-    with st.form("model2_form"):
-        st.write("Masukkan Total Budget dan persentase masing-masing platform:")
-        
-        # Input untuk Total Budget
-        total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, value=0.0, format="%.0f")
+    st.markdown("### Platform Inputs")
 
-        model2_data = {}
-        platforms = ["Meta", "TikTok", "Google"]
+    platforms = ["Meta", "TikTok", "Google"]
+    model2_data = {}
 
-        for platform in platforms:
-            st.subheader(f"{platform}")
-            inv_percent = st.number_input(f"Investment Percentage ({platform})", min_value=0.0, max_value=100.0, value=0.0, format="%.2f", key=f"{platform}_inv")
-            cpc_val = st.number_input(f"CPC ({platform})", min_value=0.01, value=1000.0, format="%.2f", key=f"{platform}_cpc")
-            ctr_val = st.number_input(f"CTR (%) ({platform})", min_value=0.01, value=1.0, format="%.2f", key=f"{platform}_ctr")
-            model2_data[platform] = {"inv_percent": inv_percent, "cpc": cpc_val, "ctr": ctr_val}
+    for platform in platforms:
+        with st.expander(f"{platform}"):
+            inv_percent = st.number_input(f"{platform} - Investment (%)", min_value=0.0, max_value=100.0, value=0.0, format="%.2f")
+            ctr = st.number_input(f"{platform} - CTR (%)", min_value=0.0, value=0.0, format="%.2f")
+            cpc = st.number_input(f"{platform} - CPC (IDR)", min_value=0.0, value=0.0, format="%.2f")
+            cr = st.number_input(f"{platform} - CR (%)", min_value=0.0, value=0.0, format="%.2f")
 
-        submitted = st.form_submit_button("Calculate Model 2 Result (Manual)")
+            model2_data[platform] = {
+                "inv_percent": inv_percent,
+                "ctr": ctr,
+                "cpc": cpc,
+                "cr": cr
+            }
 
-    if submitted:
+    if st.button("Calculate Model 2 Result (Manual)"):
+        st.subheader("🧮 Model 2 Results (Using Formulas)")
         result_data = []
-        total_inv = 0
-        total_clicks = 0
-        total_impressions = 0
 
         for platform, data in model2_data.items():
             try:
-                # Menghitung Investment per platform
-                inv = total_budget * (data["inv_percent"] / 100)
-                clicks = inv / data["cpc"] if data["cpc"] > 0 else 0
+                investment = total_budget * (data["inv_percent"] / 100)
+                clicks = investment / data["cpc"] if data["cpc"] > 0 else 0
                 impressions = clicks / (data["ctr"] / 100) if data["ctr"] > 0 else 0
-                cpm = (inv / impressions) * 1000 if impressions > 0 else 0
-
-                total_inv += inv
-                total_clicks += clicks
-                total_impressions += impressions
+                cpm = (investment / impressions) * 1000 if impressions > 0 else 0
 
                 result_data.append({
                     "Platform": platform,
-                    "Investment (IDR)": f"{inv:,.0f}",
+                    "Investment (IDR)": f"{investment:,.0f}",
                     "CPC (IDR)": f"{data['cpc']:,.2f}",
                     "CTR (%)": f"{data['ctr']:.2f}",
                     "Clicks": f"{clicks:,.0f}",
@@ -148,20 +153,13 @@ elif model_choice == "Model 2 - Manual":
                     "CPM (IDR)": f"{cpm:,.2f}"
                 })
             except Exception as e:
-                st.warning(f"Error menghitung {platform}: {e}")
+                st.warning(f"Calculation error for {platform}: {e}")
 
         result_df = pd.DataFrame(result_data)
         st.dataframe(result_df, use_container_width=True)
 
-        st.markdown("### 📊 Total Summary")
-        st.markdown(f"""
-        - **Total Investment:** IDR {total_inv:,.0f}  
-        - **Total Clicks:** {total_clicks:,.0f}  
-        - **Total Impressions:** {total_impressions:,.0f}
-        """)
-
 # ==========================
-# FOOTER
+# Footer
 # ==========================
 current_year = datetime.datetime.now().year
 st.markdown("---")
