@@ -111,7 +111,9 @@ if model_type == "Model 1 (Prediction Model)":
 # ==========================
 elif model_type == "Model 2 (Manual Calculation)":
     st.markdown("### Manual Cost Estimation")
+
     total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, format="%.0f", value=0.0)
+    aov = st.number_input("Average Order Value / AOV (IDR)", min_value=0.0, format="%.0f", value=0.0)
 
     st.markdown("### Platform Inputs")
     platforms = ["Meta", "TikTok", "Google"]
@@ -141,20 +143,31 @@ elif model_type == "Model 2 (Manual Calculation)":
                 clicks = investment / data["cpc"] if data["cpc"] > 0 else 0
                 impressions = clicks / (data["ctr"] / 100) if data["ctr"] > 0 else 0
                 cpm = (investment / impressions) * 1000 if impressions > 0 else 0
+                orders = clicks * (data["cr"] / 100)
+                sales = orders * aov
+                cps = investment / orders if orders > 0 else 0
+                roas = sales / investment if investment > 0 else 0
 
                 result_data.append({
                     "Platform": platform,
                     "Investment (IDR)": f"{investment:,.0f}",
                     "CPC (IDR)": f"{data['cpc']:,.2f}",
                     "CTR (%)": f"{data['ctr']:.2f}",
+                    "CR (%)": f"{data['cr']:.2f}",
                     "Clicks": f"{clicks:,.0f}",
                     "Impressions": f"{impressions:,.0f}",
-                    "CPM (IDR)": f"{cpm:,.2f}"
+                    "CPM (IDR)": f"{cpm:,.2f}",
+                    "Orders": f"{orders:,.0f}",
+                    "Sales (IDR)": f"{sales:,.0f}",
+                    "CPS (IDR)": f"{cps:,.2f}",
+                    "ROAS": f"{roas:.2f}x"
                 })
             except Exception as e:
                 st.warning(f"Calculation error for {platform}: {e}")
 
         st.markdown(f"#### 💰 Total Budget: IDR {total_budget:,.0f}")
+        st.markdown(f"#### 🛒 AOV: IDR {aov:,.0f}")
+
         result_df = pd.DataFrame(result_data)
         st.dataframe(result_df, use_container_width=True, hide_index=True)
 
