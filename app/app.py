@@ -110,10 +110,13 @@ if model_type == "Model 1 (Prediction Model)":
 # MODEL 2 - Manual Calculation
 # ==========================
 elif model_type == "Model 2 (Manual Calculation)":
+    import io
+    import base64
+
     st.markdown("### Manual Cost Estimation")
 
-    total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, format="%.0f", value=0.0)
-    aov = st.number_input("Average Order Value / AOV (IDR)", min_value=0.0, format="%.0f", value=0.0)
+    total_budget = st.number_input("💰 Total Budget (IDR)", min_value=0.0, format="%.0f", value=0.0)
+    aov = st.number_input("🛒 Average Order Value / AOV (IDR)", min_value=0.0, format="%.0f", value=0.0)
 
     st.markdown("### Platform Inputs")
     platforms = ["Meta", "TikTok", "Google"]
@@ -121,10 +124,29 @@ elif model_type == "Model 2 (Manual Calculation)":
 
     for platform in platforms:
         with st.expander(f"{platform}"):
-            inv_percent = st.number_input(f"{platform} - Investment (%)", min_value=0.0, max_value=100.0, value=0.0, format="%.2f")
-            ctr = st.number_input(f"{platform} - CTR (%)", min_value=0.0, value=0.0, format="%.2f")
-            cpc = st.number_input(f"{platform} - CPC (IDR)", min_value=0.0, value=0.0, format="%.2f")
-            cr = st.number_input(f"{platform} - CR (%)", min_value=0.0, value=0.0, format="%.2f")
+            reset = st.button(f"🔄 Reset {platform}", key=f"reset_{platform}")
+            if reset:
+                st.session_state[f"{platform}_inv"] = 0.0
+                st.session_state[f"{platform}_ctr"] = 0.0
+                st.session_state[f"{platform}_cpc"] = 0.0
+                st.session_state[f"{platform}_cr"] = 0.0
+
+            inv_percent = st.number_input(
+                f"{platform} - Investment (%)", min_value=0.0, max_value=100.0,
+                value=st.session_state.get(f"{platform}_inv", 0.0), format="%.2f", key=f"{platform}_inv"
+            )
+            ctr = st.number_input(
+                f"{platform} - CTR (%)", min_value=0.0,
+                value=st.session_state.get(f"{platform}_ctr", 0.0), format="%.2f", key=f"{platform}_ctr"
+            )
+            cpc = st.number_input(
+                f"{platform} - CPC (IDR)", min_value=0.0,
+                value=st.session_state.get(f"{platform}_cpc", 0.0), format="%.2f", key=f"{platform}_cpc"
+            )
+            cr = st.number_input(
+                f"{platform} - CR (%)", min_value=0.0,
+                value=st.session_state.get(f"{platform}_cr", 0.0), format="%.2f", key=f"{platform}_cr"
+            )
 
             model2_data[platform] = {
                 "inv_percent": inv_percent,
@@ -133,8 +155,8 @@ elif model_type == "Model 2 (Manual Calculation)":
                 "cr": cr
             }
 
-    if st.button("Calculate Model 2 Result (Manual)"):
-        st.subheader("🧮 Model 2 Results (Using Formulas)")
+    if st.button("🧮 Calculate Model 2 Result (Manual)"):
+        st.subheader("📊 Model 2 Results (Using Formulas)")
         result_data = []
 
         for platform, data in model2_data.items():
@@ -150,17 +172,17 @@ elif model_type == "Model 2 (Manual Calculation)":
 
                 result_data.append({
                     "Platform": platform,
-                    "Investment (IDR)": f"{investment:,.0f}",
-                    "CPC (IDR)": f"{data['cpc']:,.2f}",
-                    "CTR (%)": f"{data['ctr']:.2f}",
-                    "CR (%)": f"{data['cr']:.2f}",
-                    "Clicks": f"{clicks:,.0f}",
-                    "Impressions": f"{impressions:,.0f}",
-                    "CPM (IDR)": f"{cpm:,.2f}",
-                    "Orders": f"{orders:,.0f}",
-                    "Sales (IDR)": f"{sales:,.0f}",
-                    "CPS (IDR)": f"{cps:,.2f}",
-                    "ROAS": f"{roas:.2f}x"
+                    "Investment (IDR)": investment,
+                    "CPC (IDR)": data["cpc"],
+                    "CTR (%)": data["ctr"],
+                    "CR (%)": data["cr"],
+                    "Clicks": clicks,
+                    "Impressions": impressions,
+                    "CPM (IDR)": cpm,
+                    "Orders": orders,
+                    "Sales (IDR)": sales,
+                    "CPS (IDR)": cps,
+                    "ROAS": roas
                 })
             except Exception as e:
                 st.warning(f"Calculation error for {platform}: {e}")
@@ -169,7 +191,31 @@ elif model_type == "Model 2 (Manual Calculation)":
         st.markdown(f"#### 🛒 AOV: IDR {aov:,.0f}")
 
         result_df = pd.DataFrame(result_data)
-        st.dataframe(result_df, use_container_width=True, hide_index=True)
+
+        # Format tampil di tabel
+        formatted_df = result_df.copy()
+        formatted_df["Investment (IDR)"] = formatted_df["Investment (IDR)"].apply(lambda x: f"{x:,.0f}")
+        formatted_df["CPC (IDR)"] = formatted_df["CPC (IDR)"].apply(lambda x: f"{x:,.2f}")
+        formatted_df["CTR (%)"] = formatted_df["CTR (%)"].apply(lambda x: f"{x:.2f}")
+        formatted_df["CR (%)"] = formatted_df["CR (%)"].apply(lambda x: f"{x:.2f}")
+        formatted_df["Clicks"] = formatted_df["Clicks"].apply(lambda x: f"{x:,.0f}")
+        formatted_df["Impressions"] = formatted_df["Impressions"].apply(lambda x: f"{x:,.0f}")
+        formatted_df["CPM (IDR)"] = formatted_df["CPM (IDR)"].apply(lambda x: f"{x:,.2f}")
+        formatted_df["Orders"] = formatted_df["Orders"].apply(lambda x: f"{x:,.0f}")
+        formatted_df["Sales (IDR)"] = formatted_df["Sales (IDR)"].apply(lambda x: f"{x:,.0f}")
+        formatted_df["CPS (IDR)"] = formatted_df["CPS (IDR)"].apply(lambda x: f"{x:,.2f}")
+        formatted_df["ROAS"] = formatted_df["ROAS"].apply(lambda x: f"{x:.2f}x")
+
+        st.dataframe(formatted_df, use_container_width=True, hide_index=True)
+
+        # Download Excel
+        towrite = io.BytesIO()
+        result_df.to_excel(towrite, index=False, sheet_name="Model2 Result")
+        towrite.seek(0)
+        b64 = base64.b64encode(towrite.read()).decode()
+        href = f'<a href="data:application/octet-stream;base64,{b64}" download="model2_result.xlsx">📥 Download as Excel</a>'
+        st.markdown(href, unsafe_allow_html=True)
+
 
 # ==========================
 # Footer
