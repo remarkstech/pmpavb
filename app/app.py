@@ -114,7 +114,6 @@ elif model_type == "Model 2 (Manual Calculation)":
     total_budget = st.number_input("Total Budget (IDR)", min_value=0.0, format="%.0f", value=0.0)
 
     st.markdown("### Platform Inputs")
-
     platforms = ["Meta", "TikTok", "Google"]
     model2_data = {}
 
@@ -155,8 +154,9 @@ elif model_type == "Model 2 (Manual Calculation)":
             except Exception as e:
                 st.warning(f"Calculation error for {platform}: {e}")
 
+        st.markdown(f"#### 💰 Total Budget: IDR {total_budget:,.0f}")
         result_df = pd.DataFrame(result_data)
-        st.dataframe(result_df, use_container_width=True)
+        st.dataframe(result_df, use_container_width=True, hide_index=True)
 
 # ==========================
 # Footer
