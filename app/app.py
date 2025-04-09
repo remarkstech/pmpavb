@@ -1,3 +1,6 @@
+# ==========================
+# IMPORT LIBRARY
+# ==========================
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -8,11 +11,10 @@ import traceback
 import datetime
 
 # ==========================
-# 1. Load Model & Scaler (Dengan Caching)
+# LOAD MODEL & SCALERS (CACHED)
 # ==========================
 @st.cache_resource
 def load_model():
-    """Load model hanya sekali untuk mencegah reload berulang."""
     model_path = os.path.abspath("dl_model3.h5")
     try:
         return tf.keras.models.load_model(model_path)
@@ -22,10 +24,8 @@ def load_model():
 
 @st.cache_resource
 def load_scalers():
-    """Load scaler_X dan scaler_y hanya sekali."""
     scaler_X_path = os.path.abspath("scaler_X1.pkl")
     scaler_y_path = os.path.abspath("scaler_y1.pkl")
-    
     try:
         scaler_X = joblib.load(scaler_X_path)
         scaler_y = joblib.load(scaler_y_path)
@@ -34,27 +34,31 @@ def load_scalers():
         st.error(f"Error loading scaler: {e}")
         st.stop()
 
-# Load model & scalers
+# ==========================
+# LOAD MODEL DAN SCALERS
+# ==========================
 with st.spinner("Loading model & scalers..."):
     model = load_model()
     scaler_X, scaler_y = load_scalers()
 
 # ==========================
-# 2. Streamlit Interface
+# STREAMLIT UI
 # ==========================
 st.image("logo_final-02.png", width=100)
 st.title("Media Plan Automation")
 
 # Instructions
 st.markdown("""
-    **Instructions:**
-    1. Enter the required metrics (Impressions, Clicks, Leads, CPL, CPC).
-    2. Select the Industry and Campaign Type (Leave as is it if you want to do overall prediction).
-    3. Click 'Calculate Cost' to get the cost estimation.
-    4. Use 'Reset Inputs' to clear all inputs.
+**Instructions:**
+1. Masukkan metrics (Impressions, Clicks, Leads, CPC, CPL).
+2. Pilih Industry dan Campaign Type.
+3. Klik 'Calculate Cost' untuk estimasi menggunakan model AI (Model 1).
+4. Gunakan Model 2 untuk menghitung manual berdasarkan rumus.
 """)
 
-# Inputs
+# ==========================
+# INPUT USER UNTUK MODEL 1
+# ==========================
 margin = st.number_input("Margin (%)", min_value=0.0, format="%.0f", value=0.0)
 impressions = st.number_input("Impressions", min_value=0.0, format="%.0f", value=0.0)
 clicks = st.number_input("Clicks", min_value=0.0, format="%.0f", value=0.0)
@@ -62,34 +66,34 @@ leads = st.number_input("Leads", min_value=0.0, format="%.0f", value=0.0)
 cpc = st.number_input("CPC", min_value=0.0, format="%.2f", value=0.0)
 cpl = st.number_input("CPL", min_value=0.0, format="%.2f", value=0.0)
 
-# Add default options for Campaign Type and Industry
+# Pilihan Campaign Type dan Industry
 sources = ['Select Campaign Type', 'DIRECT', 'FB', 'IG', 'SEM', 'DISC', 'PMAX']
 industries = ['Select Industry Type', "AUTOMOTIVE", "EDUCATION", "FOOD MANUFACTURE", "LIFT DISTRIBUTOR", "PROPERTY"]
 
-selected_source = st.selectbox("Campaign Type", sources, index=0)  # Default to "Select Campaign Type"
-selected_industry = st.selectbox("Industry", industries, index=0)  # Default to "Select Industry Type"
+selected_source = st.selectbox("Campaign Type", sources, index=0)
+selected_industry = st.selectbox("Industry", industries, index=0)
 
-# One-hot encoding industri & source
-industry_dict = {industry: 0 for industry in industries[1:]}  # Exclude default option
+# One-hot encoding
+industry_dict = {industry: 0 for industry in industries[1:]}
 if selected_industry != "Select Industry Type":
     industry_dict[selected_industry] = 1
 
-source_dict = {source: 0 for source in sources[1:]}  # Exclude default option
+source_dict = {source: 0 for source in sources[1:]}
 if selected_source != "Select Campaign Type":
     source_dict[selected_source] = 1
 
-# Buat DataFrame
+# DataFrame input
 input_data = pd.DataFrame([{
     "impressions": impressions,
     "clicks": clicks,
     "leads": leads,
     "cpl": cpl,
     "cpc": cpc,
-    **{f"source_{source}": source_dict[source] for source in sources[1:]},  # Exclude default option
-    **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}  # Exclude default option
+    **{f"source_{source}": source_dict[source] for source in sources[1:]},
+    **{f"industry_{industry}": industry_dict[industry] for industry in industries[1:]}
 }])
 
-# Urutkan sesuai model
+# Kolom sesuai urutan model
 expected_columns = [
     "impressions", "clicks", "leads", "cpl", "cpc",
     "source_DISC", "source_FB", "source_IG", "source_PMAX", "source_SEM",
@@ -102,23 +106,21 @@ input_data = input_data[expected_columns]
 input_data_log = np.log1p(input_data)
 input_scaled = scaler_X.transform(input_data_log)
 
-# Prediksi cost
-if st.button("Calculate Cost"):
+# ==========================
+# MODEL 1 - PREDIKSI MENGGUNAKAN MODEL
+# ==========================
+if st.button("Calculate Cost (Model 1 - AI)"):
     with st.spinner("Predicting..."):
         try:
-            # Make prediction
             pred_scaled = model.predict(input_scaled)
             pred_log = scaler_y.inverse_transform(pred_scaled)
             predicted_cost = np.expm1(pred_log)
-            predicted_cost = predicted_cost
 
-            # Handle margin calculation
             if margin == 0:
                 predicted_cost2 = predicted_cost
             else:
                 predicted_cost2 = predicted_cost * (1 + (margin / 100))
-            
-            # Display results
+
             if margin == 0:
                 st.success(f"**Cost Estimation:** IDR {predicted_cost[0][0]:,.0f}")
             else:
@@ -127,12 +129,71 @@ if st.button("Calculate Cost"):
             st.error("An error occurred during prediction.")
             st.text(traceback.format_exc())
 
-# Reset Button
 if st.button("Reset Inputs"):
     st.experimental_rerun()
 
 # ==========================
-# Footer
+# MODEL 2 - PERHITUNGAN MANUAL
+# ==========================
+st.markdown("---")
+st.header("📘 Model 2 - Manual Estimation (Per Platform)")
+
+# Input untuk Model 2
+with st.form("model2_form"):
+    st.write("Masukkan nilai untuk masing-masing platform:")
+    model2_data = {}
+
+    for platform in ["Meta", "TikTok", "Google"]:
+        st.subheader(platform)
+        inv = st.number_input(f"Investment ({platform})", min_value=0.0, value=0.0, format="%.0f", key=f"{platform}_inv")
+        cpc_val = st.number_input(f"CPC ({platform})", min_value=0.01, value=1000.0, format="%.2f", key=f"{platform}_cpc")
+        ctr_val = st.number_input(f"CTR (%) ({platform})", min_value=0.01, value=1.0, format="%.2f", key=f"{platform}_ctr")
+        model2_data[platform] = {"inv": inv, "cpc": cpc_val, "ctr": ctr_val}
+    
+    submitted = st.form_submit_button("Calculate Model 2 Result (Manual)")
+
+if submitted:
+    st.subheader("🧮 Model 2 Results (Using Formulas)")
+
+    result_data = []
+    total_inv = 0
+    total_clicks = 0
+    total_impressions = 0
+
+    for platform, data in model2_data.items():
+        try:
+            clicks = data["inv"] / data["cpc"] if data["cpc"] > 0 else 0
+            impressions = clicks / (data["ctr"] / 100) if data["ctr"] > 0 else 0
+            cpm = (data["inv"] / impressions) * 1000 if impressions > 0 else 0
+
+            total_inv += data["inv"]
+            total_clicks += clicks
+            total_impressions += impressions
+
+            result_data.append({
+                "Platform": platform,
+                "Investment (IDR)": f"{data['inv']:,.0f}",
+                "CPC (IDR)": f"{data['cpc']:,.2f}",
+                "CTR (%)": f"{data['ctr']:.2f}",
+                "Clicks": f"{clicks:,.0f}",
+                "Impressions": f"{impressions:,.0f}",
+                "CPM (IDR)": f"{cpm:,.2f}"
+            })
+        except Exception as e:
+            st.warning(f"Calculation error for {platform}: {e}")
+
+    result_df = pd.DataFrame(result_data)
+    st.dataframe(result_df, use_container_width=True)
+
+    st.markdown("### 📊 Total Summary")
+    st.markdown(f"""
+    - **Total Investment:** IDR {total_inv:,.0f}  
+    - **Total Clicks:** {total_clicks:,.0f}  
+    - **Total Impressions:** {total_impressions:,.0f}
+    """)
+
+# ==========================
+# FOOTER
 # ==========================
 current_year = datetime.datetime.now().year
 st.markdown("---")
